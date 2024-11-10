@@ -1,6 +1,6 @@
 # DIA-2024-2025-Alternative-Exercise
 
-We'll:
+We as a group (Furkan, Elias, Yetkin) try to:
 
 Implement core API functions (StartQuery(), EndQuery(), MatchDocument(), GetNextAvailRes()) and create a test driver to validate them using sample data files.
 
