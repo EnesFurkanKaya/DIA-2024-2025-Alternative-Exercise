@@ -43,6 +43,7 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <sys/time.h>
+#include <iostream>//von elias
 int GetClockTimeInMilliSec()
 {
 	struct timeval t2; gettimeofday(&t2,NULL);

@@ -30,92 +30,62 @@
 #include <cstdlib>
 #include <cstdio>
 #include <vector>
+#include <string>
+#include <climits>
+#include <iostream>
+#include <sstream>
+#include <set>
+
 using namespace std;
 
+unsigned int table[MAX_WORD_LENGTH+1];
 ///////////////////////////////////////////////////////////////////////////////////////////////
+unsigned int editDistance(string a, string b){
 
-// Computes edit distance between a null-terminated string "a" with length "na"
-//  and a null-terminated string "b" with length "nb" 
-int EditDistance(char* a, int na, char* b, int nb)
-{
-	int oo=0x7FFFFFFF;
-
-	static int T[2][MAX_WORD_LENGTH+1];
-
-	int ia, ib;
-
-	int cur=0;
-	ia=0;
-
-	for(ib=0;ib<=nb;ib++)
-		T[cur][ib]=ib;
-
-	cur=1-cur;
-
-	for(ia=1;ia<=na;ia++)
-	{
-		for(ib=0;ib<=nb;ib++)
-			T[cur][ib]=oo;
-
-		int ib_st=0;
-		int ib_en=nb;
-
-		if(ib_st==0)
-		{
-			ib=0;
-			T[cur][ib]=ia;
-			ib_st++;
-		}
-
-		for(ib=ib_st;ib<=ib_en;ib++)
-		{
-			int ret=oo;
-
-			int d1=T[1-cur][ib]+1;
-			int d2=T[cur][ib-1]+1;
-			int d3=T[1-cur][ib-1]; if(a[ia-1]!=b[ib-1]) d3++;
-
-			if(d1<ret) ret=d1;
-			if(d2<ret) ret=d2;
-			if(d3<ret) ret=d3;
-
-			T[cur][ib]=ret;
-		}
-
-		cur=1-cur;
+	for(unsigned int i = 0; i <= a.size(); i++){
+		table[i]=i;
 	}
 
-	int ret=T[1-cur][nb];
-
-	return ret;
+	unsigned int left = 0;
+	unsigned int cur;
+	for(unsigned int i = 1; i <= b.size(); i++){
+		left = i;
+		for(unsigned int j = 1; j <= a.size(); j++){
+			if(a[j - 1] == b[i - 1]){
+				cur = table[j - 1];
+			} else {
+				cur = std::min(std::min(table[j-1] + 1, table[j] + 1), left + 1);
+			}
+			table[j-1] = left;
+			left = cur;
+		}
+		table[a.size()]=left;
+	}
+	return left;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-// Computes Hamming distance between a null-terminated string "a" with length "na"
-//  and a null-terminated string "b" with length "nb" 
-unsigned int HammingDistance(char* a, int na, char* b, int nb)
-{
-	int j, oo=0x7FFFFFFF;
-	if(na!=nb) return oo;
-	
-	unsigned int num_mismatches=0;
-	for(j=0;j<na;j++) if(a[j]!=b[j]) num_mismatches++;
-	
-	return num_mismatches;
+unsigned int hammingDistance(string a, string b){
+	if(a.size()!=b.size())return INT_MAX;
+	unsigned int sum = 0; 
+	for(unsigned int i = 0; i < a.size(); i++){
+		if(a[i]!=b[i]){
+			sum++;
+		}
+	}
+	return sum;
 }
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Keeps all information related to an active query
 struct Query
 {
 	QueryID query_id;
-	char str[MAX_QUERY_LENGTH];
+	set<string> words;
 	MatchType match_type;
 	unsigned int match_dist;
 };
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Keeps all query ID results associated with a dcoument
@@ -133,7 +103,7 @@ vector<Query> queries;
 
 // Keeps all currently available results that has not been returned yet
 vector<Document> docs;
-
+string cur_doc_str;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 ErrorCode InitializeIndex(){return EC_SUCCESS;}
@@ -143,15 +113,28 @@ ErrorCode InitializeIndex(){return EC_SUCCESS;}
 ErrorCode DestroyIndex(){return EC_SUCCESS;}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief Converts a string consisting of multiple words separated by spaces into a list of strings,
+ * where each element is a single word.
+ */
+
+void string_to_words(const string& str, set<string>& words) {
+    istringstream stream(str);
+    string word;
+
+    while (stream >> word) {
+        words.insert(word);
+    }
+}
 
 ErrorCode StartQuery(QueryID query_id, const char* query_str, MatchType match_type, unsigned int match_dist)
 {
+	string str = string(query_str);
 	Query query;
-	query.query_id=query_id;
-	strcpy(query.str, query_str);
-	query.match_type=match_type;
-	query.match_dist=match_dist;
-	// Add this query to the active query set
+	query.query_id = query_id;
+    query.match_type = match_type;
+    query.match_dist = match_dist;
+	string_to_words(str, query.words);
 	queries.push_back(query);
 	return EC_SUCCESS;
 }
@@ -174,93 +157,66 @@ ErrorCode EndQuery(QueryID query_id)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
+inline bool matchQuery(Query& query, set<string>& doc_words){
+	unsigned int sum = 0;
+	switch (query.match_type){
+		case MT_EXACT_MATCH:
+			for(string query_word: query.words){
+				for(string doc_word: doc_words){
+					if(doc_word == query_word) {
+						sum ++;
+						break;
+					}
+				}
+			}
+			if(sum == query.words.size())return true;
+			else return false;
+			break;
+		case MT_HAMMING_DIST:
+			for(string query_word: query.words){
+				for(string doc_word: doc_words){
+					if(hammingDistance(query_word, doc_word) <= query.match_dist){
+						sum++;
+						break;
+					}
+				}
+			}
+			if(sum == query.words.size())return true;
+			else return false;
+			break;
+		case MT_EDIT_DIST:
+			for(string query_word: query.words){
+				for(string doc_word: doc_words){
+					if(editDistance(query_word, doc_word) <= query.match_dist){
+						sum++;
+						break;
+					}
+				}
+			}
+			if(sum == query.words.size())return true;
+			else return false;
+			break;
+		}
+	perror("query match type not allowed! ");
+	return false;
+}
 ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
 {
-	char cur_doc_str[MAX_DOC_LENGTH];
-	strcpy(cur_doc_str, doc_str);
-
-	unsigned int i, n=queries.size();
-	vector<unsigned int> query_ids;
-
-	// Iterate on all active queries to compare them with this new document
-	for(i=0;i<n;i++)
-	{
-		bool matching_query=true;
-		Query* quer=&queries[i];
-
-		int iq=0;
-		while(quer->str[iq] && matching_query)
-		{
-			while(quer->str[iq]==' ') iq++;
-			if(!quer->str[iq]) break;
-			char* qword=&quer->str[iq];
-
-			int lq=iq;
-			while(quer->str[iq] && quer->str[iq]!=' ') iq++;
-			char qt=quer->str[iq];
-			quer->str[iq]=0;
-			lq=iq-lq;
-
-			bool matching_word=false;
-
-			int id=0;
-			while(cur_doc_str[id] && !matching_word)
-			{
-				while(cur_doc_str[id]==' ') id++;
-				if(!cur_doc_str[id]) break;
-				char* dword=&cur_doc_str[id];
-
-				int ld=id;
-				while(cur_doc_str[id] && cur_doc_str[id]!=' ') id++;
-				char dt=cur_doc_str[id];
-				cur_doc_str[id]=0;
-
-				ld=id-ld;
-
-				if(quer->match_type==MT_EXACT_MATCH)
-				{
-					if(strcmp(qword, dword)==0) matching_word=true;
-				}
-				else if(quer->match_type==MT_HAMMING_DIST)
-				{
-					unsigned int num_mismatches=HammingDistance(qword, lq, dword, ld);
-					if(num_mismatches<=quer->match_dist) matching_word=true;
-				}
-				else if(quer->match_type==MT_EDIT_DIST)
-				{
-					unsigned int edit_dist=EditDistance(qword, lq, dword, ld);
-					if(edit_dist<=quer->match_dist) matching_word=true;
-				}
-
-				cur_doc_str[id]=dt;
-			}
-
-			quer->str[iq]=qt;
-
-			if(!matching_word)
-			{
-				// This query has a word that does not match any word in the document
-				matching_query=false;
-			}
-		}
-
-		if(matching_query)
-		{
-			// This query matches the document
-			query_ids.push_back(quer->query_id);
-		}
-	}
-
 	Document doc;
 	doc.doc_id=doc_id;
+	vector<QueryID> query_ids;
+	string cur_doc_str = string(doc_str);
+	set<string> doc_words;
+	string_to_words(cur_doc_str, doc_words);
+	for(Query query: queries){
+		if(matchQuery(query, doc_words)){
+			query_ids.push_back(query.query_id);
+		}
+	}
 	doc.num_res=query_ids.size();
-	doc.query_ids=0;
-	if(doc.num_res) doc.query_ids=(unsigned int*)malloc(doc.num_res*sizeof(unsigned int));
-	for(i=0;i<doc.num_res;i++) doc.query_ids[i]=query_ids[i];
-	// Add this result to the set of undelivered results
+	doc.query_ids = (QueryID*) malloc(doc.num_res * sizeof(QueryID));
+	for(unsigned int i =0; i < doc.num_res; i++)doc.query_ids[i]=query_ids[i];
 	docs.push_back(doc);
-
 	return EC_SUCCESS;
 }
 
@@ -271,7 +227,11 @@ ErrorCode GetNextAvailRes(DocID* p_doc_id, unsigned int* p_num_res, QueryID** p_
 	// Get the first undeliverd resuilt from "docs" and return it
 	*p_doc_id=0; *p_num_res=0; *p_query_ids=0;
 	if(docs.size()==0) return EC_NO_AVAIL_RES;
-	*p_doc_id=docs[0].doc_id; *p_num_res=docs[0].num_res; *p_query_ids=docs[0].query_ids;
+	
+	*p_doc_id=docs[0].doc_id;
+	*p_num_res= docs[0].num_res;
+	*p_query_ids=docs[0].query_ids;
+	
 	docs.erase(docs.begin());
 	return EC_SUCCESS;
 }
