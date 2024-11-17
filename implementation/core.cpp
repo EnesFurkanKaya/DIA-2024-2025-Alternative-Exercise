@@ -84,10 +84,17 @@ unsigned int hammingDistance(string a, string b){
 // Keeps all information related to an active query
 struct Query
 {
-	QueryID query_id;
 	set<string> words;
 	MatchType match_type;
 	unsigned int match_dist;
+
+	bool operator<(const Query& other) const {
+        if(match_type<other.match_type)return true;
+		else if (match_type>other.match_type) return false;
+		else if(match_dist<other.match_dist)return true;
+		else if (match_dist>other.match_dist) return false;
+		else return words < other.words;
+	}
 };
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -103,6 +110,7 @@ struct Document
 
 // Keeps all currently active queries
 map<QueryID,Query> queries;
+map<Query,set<QueryID>> query_ids;
 
 // Keeps all currently available results that has not been returned yet
 queue<Document> docs;
@@ -133,11 +141,13 @@ ErrorCode StartQuery(QueryID query_id, const char* query_str, MatchType match_ty
 {
 	string str = string(query_str);
 	Query query;
-	query.query_id = query_id;
-    query.match_type = match_type;
-    query.match_dist = match_dist;
+	query.match_type = match_type;
+	query.match_dist = match_dist;
 	string_to_words(str, query.words);
-	queries[query_id]=query;
+	
+	query_ids[query].insert(query_id);
+	queries[query_id] = query;
+
 	return EC_SUCCESS;
 }
 
@@ -146,7 +156,10 @@ ErrorCode StartQuery(QueryID query_id, const char* query_str, MatchType match_ty
 // Remove this query from the active query set
 ErrorCode EndQuery(QueryID query_id)
 {
-	queries.erase(queries.find(query_id)); //we dont check if id exisits so it better does
+	Query query = queries[query_id];
+	set<QueryID>& ids = query_ids[query];
+	ids.erase(ids.find(query_id));
+	queries.erase(queries.find(query_id));
 	return EC_SUCCESS;
 }
 
@@ -173,7 +186,7 @@ bool matchQuery(Query& query, set<string>& doc_words){
 					}
 				}
 				if(!match) return false;
-			}
+			} 
 			return true;
 			break;
 		case MT_EDIT_DIST:
@@ -202,19 +215,23 @@ ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
 	string_to_words(cur_doc_str, doc_words);
 
 	//matching
-	vector<QueryID> query_ids;
+	set<QueryID> ids;
 	for(auto pair: queries){
 		if(matchQuery(pair.second, doc_words)){
-			query_ids.push_back(pair.first);
+			set<QueryID> set_ids = query_ids[pair.second];
+			ids.insert(set_ids.begin(), set_ids.end());
 		}
 	}
 
 	//create document object
 	Document doc;
 	doc.doc_id=doc_id;
-	doc.num_res=query_ids.size();
+	doc.num_res=ids.size();
 	doc.query_ids = (QueryID*) malloc(doc.num_res * sizeof(QueryID));
-	for(unsigned int i =0; i < doc.num_res; i++)doc.query_ids[i]=query_ids[i];
+	unsigned int i = 0;
+    for (QueryID id : ids) {
+        doc.query_ids[i++] = id;
+    }
 	docs.push(doc);
 	return EC_SUCCESS;
 }
