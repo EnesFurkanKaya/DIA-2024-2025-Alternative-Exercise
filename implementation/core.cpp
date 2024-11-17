@@ -17,64 +17,39 @@ int min(int a, int b, int c) {
     return c;
 }
 
-// Computes edit distance between two strings - levenshtein
-// Complexity: O(n * m)
-unsigned int EditDistance(const char* a, const char* b){
-    
-    int a_len = strlen(a);
-    int b_len = strlen(b);
+// Computes edit distance between two strings
+unsigned int table[MAX_WORD_LENGTH+1];
+unsigned int EditDistance(string a, string b){
 
-    int **distance = (int **)malloc((a_len + 1) * sizeof(int *));
-    for (int i = 0; i <= a_len; i++) {
-        distance[i] = (int *)malloc((b_len + 1) * sizeof(int));
-    }
+    for(unsigned int i = 0; i <= a.size(); i++){
+		table[i]=i;
+	}
 
-    // Case: |b| = 0
-    for (int i=0; i<= a_len; i++){
-        distance[i][0] = i;
-    }
-    // Case: |a| = 0
-    for (int i=0; i<= b_len; i++){
-        distance[0][i] = i;
-    }
-
-    for (int i = 1; i <= a_len; i++){
-        for (int j = 1; j <= b_len; j++){
-            int minimum = min(distance[i-1][j], distance[i][j-1], distance[i-1][j-1]);
-            // Case: head(a) = head(b)
-            if (a[i-1] == b[j-1]){
-                distance[i][j] = minimum;
-            }
-            // Other 3 cases:
-            else{
-                distance[i][j] = minimum + 1;
-            }
-        }
-    }
-
-    int result = distance[a_len][b_len];
-
-    for (int i = 0; i <= a_len; i++) {
-        free(distance[i]);
-    }
-    free(distance);
-
-    return result;
+	unsigned int left = 0;
+	unsigned int cur;
+	for(unsigned int i = 1; i <= b.size(); i++){
+		left = i;
+		for(unsigned int j = 1; j <= a.size(); j++){
+			if(a[j - 1] == b[i - 1]){
+				cur = table[j - 1];
+			} else {
+				cur = std::min(std::min(table[j-1] + 1, table[j] + 1), left + 1);
+			}
+			table[j-1] = left;
+			left = cur;
+		}
+		table[a.size()]=left;
+	}
+	return left;
 }
 
-// Computes hamming distance between two strings with equal length - levenshtein
-unsigned int HammingDistance(const char* a, const char* b){
-    int a_len = strlen(a);
-    int b_len = strlen(b);
+// Computes hamming distance between two strings with equal length
+unsigned int HammingDistance(string a, string b){
 
-    if (a_len != b_len){
-        if(a_len > b_len){
-            return a_len;
-        }
-        return b_len;
-    }
+    if (a.size() != b.size()) return INT_MAX;
+
     unsigned int distance = 0;
-    for(int i =0; i < a_len; i++){
+    for(int i =0; i < a.size(); i++){
         if(a[i] != b[i]){
             distance++;
         }
@@ -91,7 +66,7 @@ struct Query {
 
 struct Document { 
     unsigned int doc_id;
-    unsigned int* query_ids;
+    vector<unsigned int> query_ids;
     unsigned int num_matches;
 };
 
@@ -106,7 +81,7 @@ ErrorCode StartQuery(QueryID id, const char* query_str, MatchType match_type, un
     Query new_query;
 
     istringstream ss(query_str);
-    std::string keyword;
+    string keyword;
 
     while(ss >> keyword){
         new_query.keywords.push_back(keyword);
@@ -140,7 +115,6 @@ ErrorCode MatchDocument(DocID doc_id, const char* doc_str){
 
     Document new_document;
     new_document.doc_id = doc_id;
-    new_document.query_ids = nullptr;
     new_document.num_matches = 0;
 
     // tokenize the query
@@ -153,40 +127,38 @@ ErrorCode MatchDocument(DocID doc_id, const char* doc_str){
 
     for(const Query& query : active_queries){
         bool perfect_match = true;
-        cout << "Matching the query: " << query.query_id << "\n";
+        //cout << "Matching the query: " << query.query_id << "\n";
         for(const string& keyword : query.keywords){
             bool match = false;
-            cout << "Matching the word: " << keyword << "\n";
+            //cout << "Matching the word: " << keyword << "\n";
             if(query.match_type == MT_EXACT_MATCH){
                 match = find(doc_tokens.begin(), doc_tokens.end(), keyword) != doc_tokens.end();
             }
             else if(query.match_type == MT_EDIT_DIST){
                 // Check all strings inside the document and compare them with the query. 1 if any match is found
                 match = any_of(doc_tokens.begin(), doc_tokens.end(), [&](const string &doc_word){
-                    return EditDistance(doc_word.c_str(), keyword.c_str()) <= query.distance;
+                    return EditDistance(doc_word, keyword) <= query.distance;
                 });
             }
             else{
                 // Check all strings inside the document and compare them with the query. 1 if any match is found
                 match = any_of(doc_tokens.begin(), doc_tokens.end(), [&](const string &doc_word){
-                    return HammingDistance(doc_word.c_str(), keyword.c_str()) <= query.distance;
+                    return HammingDistance(doc_word, keyword) <= query.distance;
                 });
             }
             if (!match){
-                cout << "Word " << keyword << " is NOT satisfied. \n";
+                //cout << "Word " << keyword << " is NOT satisfied. \n";
                 perfect_match = false;
                 break;
             }
             else{
-                cout << "Word " << keyword << " is satisfied. \n";
+                //cout << "Word " << keyword << " is satisfied. \n";
             }
         }
 
         if(perfect_match){
-            cout << "All words inside the query " << query.query_id << " is perfectly satisfied. \n";
-            new_document.query_ids = (unsigned int*)realloc(new_document.query_ids, (new_document.num_matches + 1) * sizeof(unsigned int));
-            new_document.query_ids[new_document.num_matches] = query.query_id;
-            new_document.num_matches++;
+            //cout << "All words inside the query " << query.query_id << " are perfectly satisfied. \n";
+            new_document.query_ids.push_back(query.query_id);
         }
     }
 
@@ -198,21 +170,12 @@ ErrorCode GetNextAvailRes(DocID* p_doc_id, unsigned int* p_num_res, QueryID** p_
     if (all_documents.empty()) return EC_NO_AVAIL_RES;
 
     Document doc = all_documents.front();
+    *p_query_ids = new unsigned int[doc.query_ids.size()];
+    copy(doc.query_ids.begin(), doc.query_ids.end(), *p_query_ids); // Copy data from the vector
+    *p_num_res = doc.query_ids.size();
     *p_doc_id = doc.doc_id;
-    *p_num_res = doc.num_matches;
-    *p_query_ids = doc.query_ids;
-
-    for (unsigned int i = 0; i < *p_num_res; i++) {
-        cout << (*p_query_ids)[i] << " ";
-    }
-    cout << endl;
 
     all_documents.erase(all_documents.begin());
 
-    if (doc.query_ids) free(doc.query_ids);
-
     return EC_SUCCESS;
 }
-
-
-
