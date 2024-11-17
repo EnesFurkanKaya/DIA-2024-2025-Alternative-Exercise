@@ -35,6 +35,9 @@
 #include <iostream>
 #include <sstream>
 #include <set>
+#include <algorithm>
+#include <map>
+#include <queue>
 
 using namespace std;
 
@@ -99,11 +102,10 @@ struct Document
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Keeps all currently active queries
-vector<Query> queries;
+map<QueryID,Query> queries;
 
 // Keeps all currently available results that has not been returned yet
-vector<Document> docs;
-string cur_doc_str;
+queue<Document> docs;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 ErrorCode InitializeIndex(){return EC_SUCCESS;}
@@ -135,66 +137,57 @@ ErrorCode StartQuery(QueryID query_id, const char* query_str, MatchType match_ty
     query.match_type = match_type;
     query.match_dist = match_dist;
 	string_to_words(str, query.words);
-	queries.push_back(query);
+	queries[query_id]=query;
 	return EC_SUCCESS;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+// Remove this query from the active query set
 ErrorCode EndQuery(QueryID query_id)
 {
-	// Remove this query from the active query set
-	unsigned int i, n=queries.size();
-	for(i=0;i<n;i++)
-	{
-		if(queries[i].query_id==query_id)
-		{
-			queries.erase(queries.begin()+i);
-			break;
-		}
-	}
+	queries.erase(queries.find(query_id)); //we dont check if id exisits so it better does
 	return EC_SUCCESS;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-inline bool matchQuery(Query& query, set<string>& doc_words){
-	unsigned int sum = 0;
+/**
+ * @brief checks if every word in the query does match any word in the document
+ */
+bool matchQuery(Query& query, set<string>& doc_words){
+	bool match;
 	switch (query.match_type){
 		case MT_EXACT_MATCH:
 			for(string query_word: query.words){
-				for(string doc_word: doc_words){
-					if(doc_word == query_word) {
-						sum ++;
-						break;
-					}
-				}
+				if (doc_words.find(query_word)==doc_words.end()) return false;
 			}
-			if(sum == query.words.size())return true;
-			else return false;
+			return true;
 			break;
 		case MT_HAMMING_DIST:
 			for(string query_word: query.words){
+				match = false;
 				for(string doc_word: doc_words){
 					if(hammingDistance(query_word, doc_word) <= query.match_dist){
-						sum++;
+						match = true;
 						break;
 					}
 				}
+				if(!match) return false;
 			}
-			if(sum == query.words.size())return true;
-			else return false;
+			return true;
 			break;
 		case MT_EDIT_DIST:
 			for(string query_word: query.words){
+				match = false;
 				for(string doc_word: doc_words){
 					if(editDistance(query_word, doc_word) <= query.match_dist){
-						sum++;
+						match = true;
 						break;
 					}
 				}
+				if(!match) return false;
 			}
-			if(sum == query.words.size())return true;
-			else return false;
+			return true;
 			break;
 		}
 	perror("query match type not allowed! ");
@@ -202,37 +195,44 @@ inline bool matchQuery(Query& query, set<string>& doc_words){
 }
 ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
 {
-	Document doc;
-	doc.doc_id=doc_id;
-	vector<QueryID> query_ids;
+
+	//transform one big document string to set of word-strings
 	string cur_doc_str = string(doc_str);
 	set<string> doc_words;
 	string_to_words(cur_doc_str, doc_words);
-	for(Query query: queries){
-		if(matchQuery(query, doc_words)){
-			query_ids.push_back(query.query_id);
+
+	//matching
+	vector<QueryID> query_ids;
+	for(auto pair: queries){
+		if(matchQuery(pair.second, doc_words)){
+			query_ids.push_back(pair.first);
 		}
 	}
+
+	//create document object
+	Document doc;
+	doc.doc_id=doc_id;
 	doc.num_res=query_ids.size();
 	doc.query_ids = (QueryID*) malloc(doc.num_res * sizeof(QueryID));
 	for(unsigned int i =0; i < doc.num_res; i++)doc.query_ids[i]=query_ids[i];
-	docs.push_back(doc);
+	docs.push(doc);
 	return EC_SUCCESS;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+// Get the first undeliverd resuilt from "docs" and return it
 ErrorCode GetNextAvailRes(DocID* p_doc_id, unsigned int* p_num_res, QueryID** p_query_ids)
-{
-	// Get the first undeliverd resuilt from "docs" and return it
+{	
 	*p_doc_id=0; *p_num_res=0; *p_query_ids=0;
-	if(docs.size()==0) return EC_NO_AVAIL_RES;
+	if(docs.empty()) return EC_NO_AVAIL_RES;
 	
-	*p_doc_id=docs[0].doc_id;
-	*p_num_res= docs[0].num_res;
-	*p_query_ids=docs[0].query_ids;
+	Document doc = docs.front();
+	*p_doc_id=doc.doc_id;
+	*p_num_res= doc.num_res;
+	*p_query_ids=doc.query_ids;
 	
-	docs.erase(docs.begin());
+	docs.pop();
 	return EC_SUCCESS;
 }
 
