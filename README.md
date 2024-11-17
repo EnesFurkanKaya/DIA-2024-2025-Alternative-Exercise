@@ -9,3 +9,6 @@ Optimize the initial implementation for higher throughput using techniques like 
 Develop a data-parallel version using a framework like Apache Spark, Flink, or Dask, and compare its performance with previous implementations.
 
 Deliverables include the source code, test results, and reports detailing implementation, optimizations, and performance comparisons.
+
+g++ -std=c++11 -o test implementation/core.cpp test_driver/test.cpp
+./test
