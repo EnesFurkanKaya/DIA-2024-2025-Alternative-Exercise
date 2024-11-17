@@ -194,81 +194,25 @@ ErrorCode MatchDocument(DocID doc_id, const char* doc_str){
     return EC_SUCCESS;
 }
 
-/*
-ErrorCode GetNextAvailRes(){
+ErrorCode GetNextAvailRes(DocID* p_doc_id, unsigned int* p_num_res, QueryID** p_query_ids) {
+    if (all_documents.empty()) return EC_NO_AVAIL_RES;
 
-}
-*/
+    Document doc = all_documents.front();
+    *p_doc_id = doc.doc_id;
+    *p_num_res = doc.num_matches;
+    *p_query_ids = doc.query_ids;
 
-void TestStartQuery() {
-    cout << "Testing StartQuery...\n";
-    // Start a few queries
-    StartQuery((QueryID)1, "apple fruit orange", MT_EDIT_DIST, (unsigned int)0);
-    StartQuery((QueryID)2, "apple banana", MT_EDIT_DIST, (unsigned int)2);
-
-    // Test that the queries were added
-    assert(active_queries.size() == 2);
-    assert(active_queries[0].query_id == 1);
-    assert(active_queries[1].query_id == 2);
-
-    cout << "Active Query 1:\n";
-    for (const string &keyword : active_queries[0].keywords) {
-        cout << keyword << " ";
+    for (unsigned int i = 0; i < *p_num_res; i++) {
+        cout << (*p_query_ids)[i] << " ";
     }
-    cout << "\n";
+    cout << endl;
 
-    cout << "Active Query 2:\n";
-    for (const string &keyword : active_queries[1].keywords) {
-        cout << keyword << " ";  // Print each keyword separated by a space
-    }
-    cout << "\n";
+    all_documents.erase(all_documents.begin());
 
-    cout << "StartQuery passed!\n";
+    if (doc.query_ids) free(doc.query_ids);
+
+    return EC_SUCCESS;
 }
 
-void TestEndQuery() {
-    cout << "Testing EndQuery...\n";
-    // End a query
-    EndQuery((QueryID)2);
-
-    // Test that the query was removed
-    assert(active_queries.size() == 1);
-    assert(active_queries[0].query_id == 1);
-    
-    cout << "EndQuery passed!\n";
-}
-
-void TestMatchDocument() {
-    cout << "Testing MatchDocument...\n";
-    // Test matching with some documents
-    MatchDocument((DocID)1001, "apple orange fruit");
-    cout << "Document 1001 matched.\n"; 
-    MatchDocument((DocID)1002, "apple fruitt oorange");
-
-    // Test that documents were added to the all_documents vector
-    assert(all_documents.size() == 2);
-    assert(all_documents[0].doc_id == 1001);
-    assert(all_documents[1].doc_id == 1002);
-
-    // Check if the correct query IDs are associated with each document
-    assert(all_documents[0].num_matches > 0);  // First document should have at least one match
-    assert(all_documents[1].num_matches > 0);  // Second document should have at least one match
-
-    cout << "MatchDocument passed!\n";
-}
-
-int main(){
-    // Clear vectors before starting tests
-    active_queries.clear();
-    all_documents.clear();
-
-    // Run tests
-    TestStartQuery();
-    TestEndQuery();
-    TestMatchDocument();
-
-    std::cout << "All tests passed successfully!\n";
-    return 0;
-}
 
 
