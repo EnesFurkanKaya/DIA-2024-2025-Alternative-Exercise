@@ -39,6 +39,8 @@
 #include <map>
 #include <queue>
 
+#include "queries.h"
+
 using namespace std;
 
 unsigned int table[MAX_WORD_LENGTH+1];
@@ -82,20 +84,6 @@ unsigned int hammingDistance(string a, string b){
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Keeps all information related to an active query
-struct Query
-{
-	set<string> words;
-	MatchType match_type;
-	unsigned int match_dist;
-
-	bool operator<(const Query& other) const {
-        if(match_type<other.match_type)return true;
-		else if (match_type>other.match_type) return false;
-		else if(match_dist<other.match_dist)return true;
-		else if (match_dist>other.match_dist) return false;
-		else return words < other.words;
-	}
-};
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Keeps all query ID results associated with a dcoument
@@ -109,8 +97,7 @@ struct Document
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Keeps all currently active queries
-map<QueryID,Query> queries;
-map<Query,set<QueryID>> query_ids;
+Queries queries;
 
 // Keeps all currently available results that has not been returned yet
 queue<Document> docs;
@@ -140,13 +127,8 @@ void string_to_words(const string& str, set<string>& words) {
 ErrorCode StartQuery(QueryID query_id, const char* query_str, MatchType match_type, unsigned int match_dist)
 {
 	string str = string(query_str);
-	Query query;
-	query.match_type = match_type;
-	query.match_dist = match_dist;
-	string_to_words(str, query.words);
-	
-	query_ids[query].insert(query_id);
-	queries[query_id] = query;
+	Query query = Query(match_type, match_dist, str);
+	queries.add(query_id, query);
 
 	return EC_SUCCESS;
 }
@@ -156,10 +138,7 @@ ErrorCode StartQuery(QueryID query_id, const char* query_str, MatchType match_ty
 // Remove this query from the active query set
 ErrorCode EndQuery(QueryID query_id)
 {
-	Query query = queries[query_id];
-	set<QueryID>& ids = query_ids[query];
-	ids.erase(ids.find(query_id));
-	queries.erase(queries.find(query_id));
+	queries.remove(query_id);
 	return EC_SUCCESS;
 }
 
@@ -216,9 +195,9 @@ ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
 
 	//matching
 	set<QueryID> ids;
-	for(auto pair: queries){
-		if(matchQuery(pair.second, doc_words)){
-			set<QueryID> set_ids = query_ids[pair.second];
+	for(Query query: queries.getAllQuerys()){
+		if(matchQuery(query, doc_words)){
+			set<QueryID> set_ids = queries.getIDs(query);
 			ids.insert(set_ids.begin(), set_ids.end());
 		}
 	}
