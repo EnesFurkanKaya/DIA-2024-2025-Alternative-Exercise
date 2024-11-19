@@ -40,6 +40,7 @@
 #include <queue>
 
 #include "queries.h"
+#include <Cache.h>
 
 using namespace std;
 
@@ -101,6 +102,8 @@ Queries queries;
 
 // Keeps all currently available results that has not been returned yet
 queue<Document> docs;
+
+//LFUCache lfu_cache;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 ErrorCode InitializeIndex(){return EC_SUCCESS;}
@@ -142,44 +145,52 @@ ErrorCode EndQuery(QueryID query_id)
 	return EC_SUCCESS;
 }
 
+DocCache cache;
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
+bool matching(Query& query, set<string>& doc_words, unsigned int (* distFunc)(string, string)){
+	
+	bool result;
+	for(string query_word: query.words){
+		result = false;
+		unsigned int dist = cache.get(query_word, query.match_type);
+		if(dist <= query.match_dist){
+			result = true;
+		}else if(dist == CACHE_DEFAULT){
+			for(string doc_word: doc_words){
+				dist = distFunc(query_word, doc_word);
+				if(dist <= query.match_dist){
+					result = true;
+					cache.add(query_word, query.match_type, dist);
+					break;
+				}
+			}
+		}
+		if(!result) return false;
+	} 
+	return true;
+}
 /**
  * @brief checks if every word in the query does match any word in the document
  */
 bool matchQuery(Query& query, set<string>& doc_words){
-	bool match;
 	switch (query.match_type){
 		case MT_EXACT_MATCH:
 			for(string query_word: query.words){
-				if (doc_words.find(query_word)==doc_words.end()) return false;
+				unsigned int dist = cache.get(query_word, query.match_type);
+				if(dist <= query.match_dist) continue;
+				if(dist != CACHE_DEFAULT) return false;
+				auto it = doc_words.find(query_word);
+				if (it != doc_words.end()) cache.add(query_word, query.match_type, query.match_dist);
+				else return false;
 			}
 			return true;
 			break;
 		case MT_HAMMING_DIST:
-			for(string query_word: query.words){
-				match = false;
-				for(string doc_word: doc_words){
-					if(hammingDistance(query_word, doc_word) <= query.match_dist){
-						match = true;
-						break;
-					}
-				}
-				if(!match) return false;
-			} 
-			return true;
+			return matching(query, doc_words, hammingDistance);
 			break;
 		case MT_EDIT_DIST:
-			for(string query_word: query.words){
-				match = false;
-				for(string doc_word: doc_words){
-					if(editDistance(query_word, doc_word) <= query.match_dist){
-						match = true;
-						break;
-					}
-				}
-				if(!match) return false;
-			}
-			return true;
+			return matching(query, doc_words, editDistance);
 			break;
 		}
 	perror("query match type not allowed! ");
@@ -188,6 +199,7 @@ bool matchQuery(Query& query, set<string>& doc_words){
 ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
 {
 
+	cache = DocCache();
 	//transform one big document string to set of word-strings
 	string cur_doc_str = string(doc_str);
 	set<string> doc_words;
