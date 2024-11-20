@@ -38,13 +38,13 @@ private:
 
 public:
 
-	void add(QueryID id, Query query);
+	void add(const QueryID& id, const Query& query);
 
-	void remove(QueryID id);
+	void remove(const QueryID& id);
 
-	set<QueryID>& getIDs(Query query);
+	set<QueryID>& getIDs(const Query& query);
 
-	Query& getQuery(QueryID id);
+	Query& getQuery(const QueryID& id);
 
 	set<Query>& getAllQuerys();
 };

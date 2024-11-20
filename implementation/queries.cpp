@@ -7,24 +7,24 @@
 #include "queries.h"
 using namespace std;
 	
-	void Queries::add(QueryID id, Query query){
+	void Queries::add(const QueryID& id, const Query& query){
 		Queries::query_to_queryIDs[query].insert(id);
 		Queries::id_to_query[id] = query;
 		Queries::queries.insert(query);
 	}
 
-	void Queries::remove(QueryID id){
+	void Queries::remove(const QueryID& id){
 		Query& query = Queries::id_to_query[id];
 		set<QueryID>& ids = Queries::query_to_queryIDs[query];
 		Queries::id_to_query.erase(Queries::id_to_query.find(id));
 		ids.erase(ids.find(id));
 	}
 
-	set<QueryID>& Queries::getIDs(Query query){
+	set<QueryID>& Queries::getIDs(const Query& query){
 		return Queries::query_to_queryIDs[query];
 	}
 
-	Query& Queries::getQuery(QueryID id){
+	Query& Queries::getQuery(const QueryID& id){
 		return Queries::id_to_query[id];
 	}
 

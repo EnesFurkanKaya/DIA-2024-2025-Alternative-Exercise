@@ -1,41 +1,37 @@
 #include <string>
 #include "core.h"
 #include <unordered_map>
+#include <unordered_map>
+#include <optional>
 #include <set>
 
 using namespace std;
 
-#define CACHE_SIZE 100000
 #define CACHE_DEFAULT INT32_MAX
 
 template<typename Key, typename Value>
-class LFUCache{
+class Cache{
 private:
-    unordered_map<Key, Value> key_to_dist;
-    unordered_map<unsigned int, set<Key>> freq_to_key;
-    unordered_map<Key, unsigned int> key_to_freq;
-    unsigned int capacity;
-    unsigned int hits;
-    unsigned int requests;
-
-    void update_freq(const Key& key);
-
-    void removeOneKey();
-
+    unordered_map<Key, Value> map;
 
 protected:
-    LFUCache();
+    Value defaultValue;
+    Cache();
 
-    unsigned int get(const Key& key);
+    Value get(const Key& key);
 
     void add(const Key& key, const Value& value);
+
+    void clear();
 };
 
-struct DocKey{
-    string word;
-    MatchType matchtype;
 
-    DocKey() = default;
+
+struct DocKey{
+    const string& word;
+    const MatchType matchtype;
+
+    DocKey(const string& w, const MatchType mt) : word(w), matchtype(mt) {};
 
     bool operator==(const DocKey& other) const {
         return word == other.word && matchtype == other.matchtype;
@@ -60,12 +56,13 @@ namespace std {
     };
 }
 
-class DocCache:LFUCache<DocKey, unsigned int>{
+class DocCache:Cache<DocKey, unsigned int>{
 public:
     DocCache();
 
-    unsigned int get(string &query_word, MatchType matchtype);
+    unsigned int get(const string &query_word, const MatchType matchtype);
 
-    void add(string &query_word, MatchType matchtype, unsigned int dist);
+    void add(const string &query_word, const MatchType matchtype, const unsigned int dist);
 
+    void clear();
 };

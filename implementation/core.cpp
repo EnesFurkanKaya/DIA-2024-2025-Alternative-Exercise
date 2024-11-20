@@ -40,39 +40,43 @@
 #include <queue>
 
 #include "queries.h"
-#include <Cache.h>
+#include <cache.h>
 
 using namespace std;
 
 unsigned int table[MAX_WORD_LENGTH+1];
 ///////////////////////////////////////////////////////////////////////////////////////////////
-unsigned int editDistance(string a, string b){
+unsigned int editDistance(const string& a, const string& b){
 
-	for(unsigned int i = 0; i <= a.size(); i++){
+	unsigned int an = a.size();
+	unsigned int bn = b.size();
+	for(unsigned int i = 0; i <= an; i++){
 		table[i]=i;
 	}
 
 	unsigned int left = 0;
 	unsigned int cur;
-	for(unsigned int i = 1; i <= b.size(); i++){
+	unsigned int top_left;
+	for(unsigned int i = 1; i <= bn; i++){
 		left = i;
-		for(unsigned int j = 1; j <= a.size(); j++){
+		for(unsigned int j = 1; j <= an; j++){
+			top_left = table[j - 1];
 			if(a[j - 1] == b[i - 1]){
-				cur = table[j - 1];
+				cur = top_left;
 			} else {
-				cur = std::min(std::min(table[j-1] + 1, table[j] + 1), left + 1);
+				cur = min(min(top_left, table[j]), left) + 1;
 			}
 			table[j-1] = left;
 			left = cur;
 		}
-		table[a.size()]=left;
+		table[an]=left;
 	}
 	return left;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-unsigned int hammingDistance(string a, string b){
+unsigned int hammingDistance(const string& a, const string& b){
 	if(a.size()!=b.size())return INT_MAX;
 	unsigned int sum = 0; 
 	for(unsigned int i = 0; i < a.size(); i++){
@@ -129,8 +133,8 @@ void string_to_words(const string& str, set<string>& words) {
 
 ErrorCode StartQuery(QueryID query_id, const char* query_str, MatchType match_type, unsigned int match_dist)
 {
-	string str = string(query_str);
-	Query query = Query(match_type, match_dist, str);
+	string str(query_str);
+	Query query(match_type, match_dist, str);
 	queries.add(query_id, query);
 
 	return EC_SUCCESS;
@@ -145,44 +149,36 @@ ErrorCode EndQuery(QueryID query_id)
 	return EC_SUCCESS;
 }
 
-DocCache cache;
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
-bool matching(Query& query, set<string>& doc_words, unsigned int (* distFunc)(string, string)){
+DocCache myCache;
+bool matching(const Query& query, const set<string>& doc_words, unsigned int (* distFunc)(const string&, const string&)){
 	
-	bool result;
-	for(string query_word: query.words){
-		result = false;
-		unsigned int dist = cache.get(query_word, query.match_type);
-		if(dist <= query.match_dist){
-			result = true;
-		}else if(dist == CACHE_DEFAULT){
-			for(string doc_word: doc_words){
-				dist = distFunc(query_word, doc_word);
-				if(dist <= query.match_dist){
-					result = true;
-					cache.add(query_word, query.match_type, dist);
-					break;
-				}
-			}
-		}
-		if(!result) return false;
+	for(const string& query_word: query.words){
+		unsigned int dist = myCache.get(query_word, query.match_type);
+		if(dist <= query.match_dist) continue;
+		if(dist != CACHE_DEFAULT) return false;
+		for(const string& doc_word: doc_words) dist = min(dist, distFunc(query_word, doc_word));
+		myCache.add(query_word, query.match_type, dist);
+		if(dist > query.match_dist)return false;
 	} 
 	return true;
 }
 /**
  * @brief checks if every word in the query does match any word in the document
  */
-bool matchQuery(Query& query, set<string>& doc_words){
+bool matchQuery(const Query& query, const set<string>& doc_words){
 	switch (query.match_type){
 		case MT_EXACT_MATCH:
-			for(string query_word: query.words){
-				unsigned int dist = cache.get(query_word, query.match_type);
+			for(const string& query_word: query.words){
+				unsigned int dist = myCache.get(query_word, query.match_type);
 				if(dist <= query.match_dist) continue;
 				if(dist != CACHE_DEFAULT) return false;
 				auto it = doc_words.find(query_word);
-				if (it != doc_words.end()) cache.add(query_word, query.match_type, query.match_dist);
-				else return false;
+				if (it != doc_words.end()) myCache.add(query_word, query.match_type, 0);
+				else {
+					myCache.add(query_word, query.match_type, CACHE_DEFAULT-1);
+					return false;
+				}
 			}
 			return true;
 			break;
@@ -199,7 +195,7 @@ bool matchQuery(Query& query, set<string>& doc_words){
 ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
 {
 
-	cache = DocCache();
+	myCache.clear();
 	//transform one big document string to set of word-strings
 	string cur_doc_str = string(doc_str);
 	set<string> doc_words;
@@ -207,7 +203,7 @@ ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
 
 	//matching
 	set<QueryID> ids;
-	for(Query query: queries.getAllQuerys()){
+	for(const Query& query: queries.getAllQuerys()){
 		if(matchQuery(query, doc_words)){
 			set<QueryID> set_ids = queries.getIDs(query);
 			ids.insert(set_ids.begin(), set_ids.end());
@@ -220,7 +216,7 @@ ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
 	doc.num_res=ids.size();
 	doc.query_ids = (QueryID*) malloc(doc.num_res * sizeof(QueryID));
 	unsigned int i = 0;
-    for (QueryID id : ids) {
+    for (const QueryID& id : ids) {
         doc.query_ids[i++] = id;
     }
 	docs.push(doc);
