@@ -155,9 +155,8 @@ ErrorCode EndQuery(QueryID query_id)
 
 Cache cache;
 bool matching(const Query& query, const set<string>& doc_words, unsigned int (* distFunc)(const string&, const string&)){
-	unsigned int dist;
 	for(const string& query_word: query.words){
-		dist = cache.get(query_word, query.match_type);
+		unsigned int dist = cache.get(query_word, query.match_type);
 		if(dist <= query.match_dist) continue;
 		if(dist != CACHE_DEFAULT) return false;
 		for(const string& doc_word: doc_words) dist = min(dist, distFunc(query_word, doc_word));
@@ -170,25 +169,27 @@ bool matching(const Query& query, const set<string>& doc_words, unsigned int (* 
  * @brief checks if every word in the query does match any word in the document
  */
 bool matchQuery(const Query& query, const set<string>& doc_words){
-	unsigned int dist;
 	switch (query.match_type){
 		case MT_EXACT_MATCH:
 			for(const string& query_word: query.words){
-				dist = cache.get(query_word, query.match_type);
-				if(dist <= query.match_dist) continue;
-				if(dist != CACHE_DEFAULT) return false;
-				auto it = doc_words.find(query_word);
-				if (it == doc_words.end()) {
-					cache.add(query_word, query.match_type, CACHE_DEFAULT-1);
+				if (doc_words.find(query_word) == doc_words.end()) {
 					return false;
 				}
-				else cache.add(query_word, query.match_type, 0);
 			}
 			return true;
 			break;
 		case MT_HAMMING_DIST:
-			return matching(query, doc_words, hammingDistance);
-			break;
+			for(const string& query_word: query.words){
+				bool result = false;
+				for(const string& doc_word: doc_words) {
+					if(hammingDistance(query_word, doc_word) <= query.match_dist){
+						result = true;
+						break;
+					}
+				}
+				if(!result)return false;
+			} 
+			return true;
 		case MT_EDIT_DIST:
 			return matching(query, doc_words, editDistance);
 			break;
