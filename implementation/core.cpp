@@ -156,9 +156,20 @@ ErrorCode EndQuery(QueryID query_id)
 Cache cache;
 bool matching(const Query& query, const set<string>& doc_words, unsigned int (* distFunc)(const string&, const string&)){
 	for(const string& query_word: query.words){
-		unsigned int dist = cache.get(query_word, query.match_type);
+		unsigned int dist;
+		
+		//cache lookup for hamming distance as upper bound for edit distance
+		if(distFunc == editDistance){
+			dist = cache.get(query_word, MT_HAMMING_DIST);
+			if(dist <= query.match_dist) continue;
+		}
+
+		//cache lookup
+		dist = cache.get(query_word, query.match_type);
 		if(dist <= query.match_dist) continue;
 		if(dist != CACHE_DEFAULT) return false;
+
+		//has to be computed
 		for(const string& doc_word: doc_words) dist = min(dist, distFunc(query_word, doc_word));
 		cache.add(query_word, query.match_type, dist);
 		if(dist > query.match_dist)return false;
@@ -177,29 +188,16 @@ bool matchQuery(const Query& query, const set<string>& doc_words){
 				}
 			}
 			return true;
-			break;
 		case MT_HAMMING_DIST:
-			for(const string& query_word: query.words){
-				bool result = false;
-				for(const string& doc_word: doc_words) {
-					if(hammingDistance(query_word, doc_word) <= query.match_dist){
-						result = true;
-						break;
-					}
-				}
-				if(!result)return false;
-			} 
-			return true;
+			return matching(query, doc_words, hammingDistance);
 		case MT_EDIT_DIST:
 			return matching(query, doc_words, editDistance);
-			break;
 		}
 	perror("query match type not allowed! ");
 	return false;
 }
 ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
 {
-	//std::cout<<globalCache.size()<<std::endl;
 	cache.clear();
 
 	//transform one big document string to set of word-strings
@@ -226,7 +224,6 @@ ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
         doc.query_ids[i++] = id;
     }
 	docs.push(doc);
-	//std::cout <<"hitrate: "<<globalCache.hitRate()<<std::endl;
 	return EC_SUCCESS;
 }
 
