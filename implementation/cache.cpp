@@ -1,48 +1,33 @@
 #include "cache.h"
-template <typename Key, typename Value>
-inline Cache<Key, Value>::Cache()
+Cache::Cache()
 {
-    Cache::defaultValue=Value();
+    requests = 0;
+    hits = 0;
 }
 
-template <typename Key, typename Value>
-Value Cache<Key, Value>::get(const Key &key)
+unsigned int Cache::get(const string &query_word, const MatchType matchtype)
 {
-    auto it = Cache::map.find(key);
-    if(it != Cache::map.end())return it->second;
-    return Cache::defaultValue;
+    requests++;
+    auto it = map.find(Key(query_word, matchtype));
+    if(it != map.end()){
+        hits++;
+        return it->second;
+    }
+    return CACHE_DEFAULT;
 }
 
-template <typename Key, typename Value>
-void Cache<Key, Value>::add(const Key &key, const Value &value)
+void Cache::add(const string &query_word, const MatchType matchtype, const unsigned int dist)
 {
-    Cache::map[key] = value;
+    map[Key(query_word, matchtype)] = dist;
 }
 
-template <typename Key, typename Value>
-void Cache<Key, Value>::clear()
+void Cache::clear()
 {
-    Cache::map.clear();
+    map.clear();
 }
 
-DocCache::DocCache()
+float Cache::hitRate()
 {
-    Cache::defaultValue = CACHE_DEFAULT;
-}
-
-unsigned int DocCache::get(const string &query_word, const MatchType matchtype)
-{
-    DocKey key = DocKey(query_word, matchtype);
-    return Cache::get(key);
-}
-
-void DocCache::add(const string &query_word, const MatchType matchtype, const unsigned int dist)
-{
-    DocKey key = DocKey(query_word, matchtype);
-    Cache::add(key, dist);
-}
-
-void DocCache::clear()
-{
-    Cache::clear();
+    if(requests == 0) return 0;
+    return (float) hits / (float) requests;
 }

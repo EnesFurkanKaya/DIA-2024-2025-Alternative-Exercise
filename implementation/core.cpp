@@ -36,7 +36,6 @@
 #include <sstream>
 #include <set>
 #include <algorithm>
-#include <map>
 #include <queue>
 
 #include "queries.h"
@@ -44,42 +43,45 @@
 
 using namespace std;
 
-unsigned int table[MAX_WORD_LENGTH+1];
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
+unsigned int table[MAX_WORD_LENGTH+1];
 unsigned int editDistance(const string& a, const string& b){
 
-	unsigned int an = a.size();
-	unsigned int bn = b.size();
-	for(unsigned int i = 0; i <= an; i++){
+	unsigned int n, m;
+	unsigned int i, j;
+	unsigned int l, c, t;
+
+	n = a.size();
+	m = b.size();
+	for(i = 0; i <= n; i++){
 		table[i]=i;
 	}
 
-	unsigned int left = 0;
-	unsigned int cur;
-	unsigned int top_left;
-	for(unsigned int i = 1; i <= bn; i++){
-		left = i;
-		for(unsigned int j = 1; j <= an; j++){
-			top_left = table[j - 1];
+	l = 0;
+	for(i = 1; i <= m; i++){
+		l = i;
+		for(j = 1; j <= n; j++){
+			t = table[j - 1];
 			if(a[j - 1] == b[i - 1]){
-				cur = top_left;
+				c = t;
 			} else {
-				cur = min(min(top_left, table[j]), left) + 1;
+				c = min(min(t, table[j]), l) + 1;
 			}
-			table[j-1] = left;
-			left = cur;
+			table[j-1] = l;
+			l = c;
 		}
-		table[an]=left;
+		table[n]=l;
 	}
-	return left;
+	return l;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
 unsigned int hammingDistance(const string& a, const string& b){
+	unsigned int sum, i;
 	if(a.size()!=b.size())return INT_MAX;
-	unsigned int sum = 0; 
-	for(unsigned int i = 0; i < a.size(); i++){
+	sum = 0; 
+	for(i = 0; i < a.size(); i++){
 		if(a[i]!=b[i]){
 			sum++;
 		}
@@ -150,15 +152,16 @@ ErrorCode EndQuery(QueryID query_id)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-DocCache myCache;
+
+Cache cache;
 bool matching(const Query& query, const set<string>& doc_words, unsigned int (* distFunc)(const string&, const string&)){
-	
+	unsigned int dist;
 	for(const string& query_word: query.words){
-		unsigned int dist = myCache.get(query_word, query.match_type);
+		dist = cache.get(query_word, query.match_type);
 		if(dist <= query.match_dist) continue;
 		if(dist != CACHE_DEFAULT) return false;
 		for(const string& doc_word: doc_words) dist = min(dist, distFunc(query_word, doc_word));
-		myCache.add(query_word, query.match_type, dist);
+		cache.add(query_word, query.match_type, dist);
 		if(dist > query.match_dist)return false;
 	} 
 	return true;
@@ -167,18 +170,19 @@ bool matching(const Query& query, const set<string>& doc_words, unsigned int (* 
  * @brief checks if every word in the query does match any word in the document
  */
 bool matchQuery(const Query& query, const set<string>& doc_words){
+	unsigned int dist;
 	switch (query.match_type){
 		case MT_EXACT_MATCH:
 			for(const string& query_word: query.words){
-				unsigned int dist = myCache.get(query_word, query.match_type);
+				dist = cache.get(query_word, query.match_type);
 				if(dist <= query.match_dist) continue;
 				if(dist != CACHE_DEFAULT) return false;
 				auto it = doc_words.find(query_word);
-				if (it != doc_words.end()) myCache.add(query_word, query.match_type, 0);
-				else {
-					myCache.add(query_word, query.match_type, CACHE_DEFAULT-1);
+				if (it == doc_words.end()) {
+					cache.add(query_word, query.match_type, CACHE_DEFAULT-1);
 					return false;
 				}
+				else cache.add(query_word, query.match_type, 0);
 			}
 			return true;
 			break;
@@ -194,18 +198,19 @@ bool matchQuery(const Query& query, const set<string>& doc_words){
 }
 ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
 {
+	//std::cout<<globalCache.size()<<std::endl;
+	cache.clear();
 
-	myCache.clear();
 	//transform one big document string to set of word-strings
-	string cur_doc_str = string(doc_str);
+	string cur_doc_str(doc_str);
 	set<string> doc_words;
 	string_to_words(cur_doc_str, doc_words);
 
 	//matching
 	set<QueryID> ids;
-	for(const Query& query: queries.getAllQuerys()){
+	for(const Query &query: queries.getAllQuerys()){
 		if(matchQuery(query, doc_words)){
-			set<QueryID> set_ids = queries.getIDs(query);
+			set<QueryID> &set_ids = queries.getIDs(query);
 			ids.insert(set_ids.begin(), set_ids.end());
 		}
 	}
@@ -220,6 +225,7 @@ ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
         doc.query_ids[i++] = id;
     }
 	docs.push(doc);
+	//std::cout <<"hitrate: "<<globalCache.hitRate()<<std::endl;
 	return EC_SUCCESS;
 }
 
