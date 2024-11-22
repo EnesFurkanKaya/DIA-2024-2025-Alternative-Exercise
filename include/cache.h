@@ -4,10 +4,13 @@
 #include <map>
 #include <optional>
 #include <set>
+#include <distance.h>
+
 
 using namespace std;
 
 #define CACHE_DEFAULT INT32_MAX
+#define UPPER_BOUND_QUERYS 5
 
 struct Key{
     const string& word;
@@ -37,20 +40,35 @@ namespace std {
         }
     };
 }
+struct Value{
+    unsigned int distance;
+    set<string>::iterator next_doc_word;
 
+    Value() = default;
+    Value(const unsigned int dist, const set<string>::iterator &ndw):distance(dist),next_doc_word(ndw){};
+};
 class Cache{
-    unordered_map<Key, unsigned int> map;
+    unordered_map<string, Value> hamming_map;
+    unordered_map<string, Value> edit_map;
+    set<string>::iterator doc_words_begin; 
+
     unsigned int hits;
     unsigned int requests;
 
 public:
-    Cache();
+    Cache(const set<string>::iterator &it);
 
-    unsigned int get(const string &query_word, const MatchType matchtype);
+    Value getHammingDistance(const string &query_word);
 
-    void add(const string &query_word, const MatchType matchtype, const unsigned int dist);
+    void addHammingDistance(const string &query_word, const unsigned int dist, const set<string>::iterator &it);
 
-    void clear();
+    Value getEditDistance(const string &query_word);
+
+    void addEditDistance(const string &query_word, const unsigned int dist, const set<string>::iterator &it);
 
     float hitRate();
+
+    unsigned int upperBoundHammingDistance(const string &query_word);
+    unsigned int upperBoundEditDistance(const string &query_word);
+
 };

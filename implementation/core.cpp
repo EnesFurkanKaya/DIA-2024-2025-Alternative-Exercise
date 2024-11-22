@@ -40,57 +40,9 @@
 
 #include "queries.h"
 #include <cache.h>
+#include <distance.h>
 
 using namespace std;
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-unsigned int table[MAX_WORD_LENGTH+1];
-unsigned int editDistance(const string& a, const string& b){
-
-	unsigned int n, m;
-	unsigned int i, j;
-	unsigned int l, c, t;
-
-	n = a.size();
-	m = b.size();
-	for(i = 0; i <= n; i++){
-		table[i]=i;
-	}
-
-	l = 0;
-	for(i = 1; i <= m; i++){
-		l = i;
-		for(j = 1; j <= n; j++){
-			t = table[j - 1];
-			if(a[j - 1] == b[i - 1]){
-				c = t;
-			} else {
-				c = min(min(t, table[j]), l) + 1;
-			}
-			table[j-1] = l;
-			l = c;
-		}
-		table[n]=l;
-	}
-	return l;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-unsigned int hammingDistance(const string& a, const string& b){
-	unsigned int sum, i;
-	if(a.size()!=b.size())return INT_MAX;
-	sum = 0; 
-	for(i = 0; i < a.size(); i++){
-		if(a[i]!=b[i]){
-			sum++;
-		}
-	}
-	return sum;
-}
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-// Keeps all information related to an active query
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Keeps all query ID results associated with a dcoument
@@ -153,33 +105,10 @@ ErrorCode EndQuery(QueryID query_id)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-Cache cache;
-bool matching(const Query& query, const set<string>& doc_words, unsigned int (* distFunc)(const string&, const string&)){
-	for(const string& query_word: query.words){
-		unsigned int dist;
-		
-		//cache lookup for hamming distance as upper bound for edit distance
-		if(distFunc == editDistance){
-			dist = cache.get(query_word, MT_HAMMING_DIST);
-			if(dist <= query.match_dist) continue;
-		}
-
-		//cache lookup
-		dist = cache.get(query_word, query.match_type);
-		if(dist <= query.match_dist) continue;
-		if(dist != CACHE_DEFAULT) return false;
-
-		//has to be computed
-		for(const string& doc_word: doc_words) dist = min(dist, distFunc(query_word, doc_word));
-		cache.add(query_word, query.match_type, dist);
-		if(dist > query.match_dist)return false;
-	} 
-	return true;
-}
 /**
  * @brief checks if every word in the query does match any word in the document
  */
-bool matchQuery(const Query& query, const set<string>& doc_words){
+bool matchQuery(const Query& query, const set<string>& doc_words, Cache& cache){
 	switch (query.match_type){
 		case MT_EXACT_MATCH:
 			for(const string& query_word: query.words){
@@ -189,26 +118,63 @@ bool matchQuery(const Query& query, const set<string>& doc_words){
 			}
 			return true;
 		case MT_HAMMING_DIST:
-			return matching(query, doc_words, hammingDistance);
+			for(const string& query_word: query.words){
+				unsigned int dist;
+
+				//cache lookup
+				Value cacheValue = cache.getHammingDistance(query_word);
+				dist = cacheValue.distance;
+				auto it = cacheValue.next_doc_word;
+				if(dist <= query.match_dist) continue;
+				if(it == doc_words.end()) return false;
+
+				//has to be computed
+				for(;it!=doc_words.end(); ++it) {
+					dist = min(dist, hammingDistance(query_word, it->data()));
+					if(dist <= query.match_dist) break;
+				}
+				cache.addHammingDistance(query_word, dist, it);
+				if(dist > query.match_dist)return false;
+			} 
+			return true;
 		case MT_EDIT_DIST:
-			return matching(query, doc_words, editDistance);
-		}
+			for(const string& query_word: query.words){
+				unsigned int dist;
+
+				//cache lookup
+				Value cacheValue = cache.getEditDistance(query_word);
+				dist = cacheValue.distance;
+				auto it = cacheValue.next_doc_word;
+				if(dist <= query.match_dist) continue;
+				if(it == doc_words.end()) return false;
+	
+				//has to be computed
+				for(;it!=doc_words.end(); ++it) {
+					dist = min(dist, editDistance(query_word, it->data()));
+					if(dist <= query.match_dist) break;
+				}
+				cache.addEditDistance(query_word, dist, it);
+				if(dist > query.match_dist)return false;
+			}
+			return true;
+	}
 	perror("query match type not allowed! ");
 	return false;
 }
+
 ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
 {
-	cache.clear();
 
 	//transform one big document string to set of word-strings
 	string cur_doc_str(doc_str);
 	set<string> doc_words;
 	string_to_words(cur_doc_str, doc_words);
 
+	Cache cache = Cache(doc_words.begin());
 	//matching
 	set<QueryID> ids;
 	for(const Query &query: queries.getAllQuerys()){
-		if(matchQuery(query, doc_words)){
+		if(matchQuery(query, doc_words, cache)){
 			set<QueryID> &set_ids = queries.getIDs(query);
 			ids.insert(set_ids.begin(), set_ids.end());
 		}
