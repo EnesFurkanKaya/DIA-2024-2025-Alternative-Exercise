@@ -70,9 +70,6 @@ ErrorCode InitializeIndex(){return EC_SUCCESS;}
 ErrorCode DestroyIndex(){return EC_SUCCESS;}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-/**
- * @brief 
- */
 
 /**
  * @brief Converts a string consisting of multiple words separated by spaces into a list of strings,
