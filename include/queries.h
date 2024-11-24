@@ -1,6 +1,6 @@
 
-#ifndef __SIGMOD_QUERIES_H_
-#define __SIGMOD_QUERIES_H_
+#ifndef QUERIES_H
+#define QUERIES_H
 
 #include <map>
 #include <core.h>
@@ -15,12 +15,13 @@ struct Query
 	unsigned int match_dist;
 	set<string> words;
 
-
 	Query();
 	Query(MatchType match_type, unsigned int match_dist, set<string>& words);
 	Query(MatchType match_type, unsigned int match_dist, string& words);
 
 
+	// is used by the std::set sort logic.
+	// doesn't matter how how we decide if query_a < query_b but the logic must be transitive
 	bool operator<(const Query& other) const {
         if(match_type < other.match_type)return true;
 		else if (match_type > other.match_type) return false;

@@ -1,14 +1,14 @@
 #include <distance.h>
 
 unsigned int table[MAX_WORD_LENGTH+1];
-unsigned int editDistance(const string& a, const string& b){
+unsigned int editDistance(const string& first_word, const string& second_word){
 
 	unsigned int n, m;
 	unsigned int i, j;
 	unsigned int l, c, t;
 
-	n = a.size();
-	m = b.size();
+	n = first_word.size();
+	m = second_word.size();
 	for(i = 0; i <= n; i++){
 		table[i]=i;
 	}
@@ -18,7 +18,7 @@ unsigned int editDistance(const string& a, const string& b){
 		l = i;
 		for(j = 1; j <= n; j++){
 			t = table[j - 1];
-			if(a[j - 1] == b[i - 1]){
+			if(first_word[j - 1] == second_word[i - 1]){
 				c = t;
 			} else {
 				c = min(min(t, table[j]), l) + 1;
@@ -32,12 +32,12 @@ unsigned int editDistance(const string& a, const string& b){
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
-unsigned int hammingDistance(const string& a, const string& b){
+unsigned int hammingDistance(const string& first_word, const string& second_word){
 	unsigned int sum, i;
-	if(a.size()!=b.size())return INT32_MAX;
+	if(first_word.size()!=second_word.size())return INT32_MAX;
 	sum = 0; 
-	for(i = 0; i < a.size(); i++){
-		if(a[i]!=b[i]){
+	for(i = 0; i < first_word.size(); i++){
+		if(first_word[i]!=second_word[i]){
 			sum++;
 		}
 	}
