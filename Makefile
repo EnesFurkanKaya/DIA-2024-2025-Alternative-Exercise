@@ -1,6 +1,6 @@
 # Build targets (your implementation targets should go in IMPL_O)
 TEST_O=test_driver/test.o 
-IMPL_O=implementation/core.o implementation/queries.o
+IMPL_O=implementation/core.o implementation/queries.o implementation/cache.o implementation/distance.o
 
 # Compiler flags
 CC  = gcc

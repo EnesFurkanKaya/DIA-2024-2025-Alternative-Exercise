@@ -1,1 +1,7 @@
 .vscode
+Cache.o
+core.o
+queries.o
+test.o
+libcore.so
+testdriver
