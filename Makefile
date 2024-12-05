@@ -10,10 +10,15 @@ CXXFLAGS=$(CFLAGS)
 LDFLAGS=-lpthread
 
 # The programs that will be built
-PROGRAMS=testdriver
+PROGRAMS = testdriver
 
 # The name of the library that will be built
-LIBRARY=core
+LIBRARY = core
+
+# Python-related variables
+PYTHON = python3
+VENV_DIR = .venv
+REQUIREMENTS = requirements.txt
 
 # Build all programs
 all: $(PROGRAMS)
@@ -24,6 +29,28 @@ lib: $(IMPL_O)
 testdriver: lib $(TEST_O)
 	$(CXX) $(CXXFLAGS) -o testdriver $(TEST_O) ./lib$(LIBRARY).so
 
+# Create Python virtual environment and install dependencies
+.PHONY: venv
+venv: $(VENV_DIR)/.installed
+
+$(VENV_DIR):
+	$(PYTHON) -m venv $(VENV_DIR)
+	$(VENV_DIR)/bin/pip install --upgrade pip
+
+$(VENV_DIR)/.installed: $(REQUIREMENTS) | $(VENV_DIR)
+	$(VENV_DIR)/bin/pip install -r $(REQUIREMENTS)
+	touch $(VENV_DIR)/.installed
+
+# Clean build files
 clean:
 	rm -f $(PROGRAMS) lib$(LIBRARY).so
 	find . -name '*.o' -print | xargs rm -f
+	rm -rf $(VENV_DIR)
+
+# Setup for Python environment (no C programs)
+.PHONY: setup_python
+setup_python: venv
+
+# Build everything (C programs) without setting up Python environment
+.PHONY: setup
+setup: all

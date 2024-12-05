@@ -5,3 +5,4 @@ queries.o
 test.o
 libcore.so
 testdriver
+.venv
