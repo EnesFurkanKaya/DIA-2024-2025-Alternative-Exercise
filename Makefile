@@ -4,7 +4,7 @@ IMPL_O=implementation/core.o implementation/queries.o implementation/cache.o imp
 
 # Compiler flags
 CC  = gcc
-CXX = g++
+CXX = g++ -std=c++11
 CFLAGS=-O3 -fPIC -Wall -g -I. -I./include
 CXXFLAGS=$(CFLAGS)
 LDFLAGS=-lpthread

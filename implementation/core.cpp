@@ -37,6 +37,8 @@
 #include <set>
 #include <algorithm>
 #include <queue>
+#include <thread>
+#include <mutex>
 
 #include "queries.h"
 #include <cache.h>
@@ -60,6 +62,8 @@ Queries queries;
 
 // Keeps all currently available results that has not been returned yet
 queue<Document> docs;
+
+mutex docs_mutex; // Mutex to protect access to the docs queue
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -211,8 +215,21 @@ ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
     }
 
 	//add document
-	docs.push(document);
+	{
+		lock_guard<mutex> lock(docs_mutex);
+		docs.push(document);
+	}
 
+	return EC_SUCCESS;
+}
+
+void processDocument(DocID doc_id, const char* doc_str) {
+	MatchDocument(doc_id, doc_str);
+}
+
+ErrorCode MatchDocumentAsync(DocID doc_id, const char* doc_str) {
+	thread t(processDocument, doc_id, doc_str);
+	t.detach();
 	return EC_SUCCESS;
 }
 
