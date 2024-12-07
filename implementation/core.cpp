@@ -39,6 +39,8 @@
 #include <queue>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
+#include <functional>
 
 #include "queries.h"
 #include <cache.h>
@@ -223,14 +225,62 @@ ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
 	return EC_SUCCESS;
 }
 
-void processDocument(DocID doc_id, const char* doc_str) {
-	MatchDocument(doc_id, doc_str);
+class ThreadPool {
+public:
+    ThreadPool(size_t num_threads);
+    ~ThreadPool();
+    void enqueue(function<void()> task);
+
+private:
+    vector<thread> workers;
+    queue<function<void()>> tasks;
+    mutex queue_mutex;
+    condition_variable condition;
+    bool stop;
+};
+
+ThreadPool::ThreadPool(size_t num_threads) : stop(false) { // Thread Pool Constructor itself pretty basic and simple however it is very useful
+    for (size_t i = 0; i < num_threads; ++i) {
+        workers.emplace_back([this] {
+            for (;;) {
+                function<void()> task;
+                {
+                    unique_lock<mutex> lock(this->queue_mutex);
+                    this->condition.wait(lock, [this] { return this->stop || !this->tasks.empty(); });
+                    if (this->stop && this->tasks.empty()) return;
+                    task = move(this->tasks.front());
+                    this->tasks.pop();
+                }
+                task();
+            }
+        });
+    }
 }
 
+ThreadPool::~ThreadPool() {
+    {
+        unique_lock<mutex> lock(queue_mutex);
+        stop = true;
+    }
+    condition.notify_all();
+    for (thread &worker : workers) worker.join();
+}
+
+void ThreadPool::enqueue(function<void()> task) {
+    {
+        unique_lock<mutex> lock(queue_mutex);
+        tasks.push(move(task));
+    }
+    condition.notify_one();
+}
+
+ThreadPool thread_pool(thread::hardware_concurrency()); // This one uses all the available cores of the machine
+
 ErrorCode MatchDocumentAsync(DocID doc_id, const char* doc_str) {
-	thread t(processDocument, doc_id, doc_str);
-	t.detach();
-	return EC_SUCCESS;
+    thread_pool.enqueue([doc_id, doc_str] {
+        MatchDocument(doc_id, doc_str);
+    });
+    return EC_SUCCESS;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
