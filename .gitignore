@@ -5,3 +5,6 @@ queries.o
 test.o
 libcore.so
 testdriver
+distance.o
+result.txt
+.venv
