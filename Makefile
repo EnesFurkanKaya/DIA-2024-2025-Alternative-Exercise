@@ -6,7 +6,7 @@ IMPL_O=implementation/core.o implementation/queries.o implementation/cache.o imp
 CC  = gcc
 CXX = g++
 CFLAGS=-O3 -fPIC -Wall -g -I. -I./include
-CXXFLAGS=$(CFLAGS)
+CXXFLAGS=$(CFLAGS) -std=c++17
 LDFLAGS=-lpthread
 
 # The programs that will be built
