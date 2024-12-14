@@ -152,6 +152,6 @@ def test_sigmoid(input_file: TextIO, output_file: TextIO, time_limit_seconds: in
 
 input_file: TextIO = open(INPUT_FILE_PATH, 'r')
 output_file: TextIO = open(OUTPUT_FILE_PATH, 'w')
-test_sigmoid(input_file, output_file, 1000)
+test_sigmoid(input_file, output_file, 10)
 input_file.close()
 output_file.close()

@@ -45,9 +45,16 @@ public:
 
 	set<QueryID>& getIDs(const Query& query);
 
-	Query& getQuery(const QueryID& id);
+    void addIDs(set<QueryID> &queries, const Query &query);
+
+    Query& getQuery(const QueryID& id);
 
 	set<Query>& getAllQuerys();
+
+	unsigned int size();
+
+	Query& getQueryByIndex(const unsigned int index);
+
 };
 
 #endif

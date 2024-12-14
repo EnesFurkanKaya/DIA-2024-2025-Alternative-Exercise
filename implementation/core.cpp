@@ -38,9 +38,10 @@
 #include <algorithm>
 #include <queue>
 
-#include "queries.h"
+#include <queries.h>
 #include <cache.h>
 #include <distance.h>
+#include <cwrapper.h>
 
 using namespace std;
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -56,14 +57,17 @@ struct Document
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 // Keeps all currently active queries
-Queries queries;
+void* queries;
 
 // Keeps all currently available results that has not been returned yet
 queue<Document> docs;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-ErrorCode InitializeIndex(){return EC_SUCCESS;}
+ErrorCode InitializeIndex(){
+	queries = init_queries();
+	return EC_SUCCESS;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -86,10 +90,7 @@ void string_to_words(const string& str, set<string>& words) {
 
 ErrorCode StartQuery(QueryID query_id, const char* query_str, MatchType match_type, unsigned int match_dist)
 {
-	string str(query_str);
-	Query query(match_type, match_dist, str);
-	queries.add(query_id, query);
-
+	start_query(queries, query_id, query_str, match_type, match_dist);
 	return EC_SUCCESS;
 }
 
@@ -98,7 +99,7 @@ ErrorCode StartQuery(QueryID query_id, const char* query_str, MatchType match_ty
 // Remove this query from the active query set
 ErrorCode EndQuery(QueryID query_id)
 {
-	queries.remove(query_id);
+	end_query(queries, query_id);
 	return EC_SUCCESS;
 }
 
@@ -179,36 +180,26 @@ ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
 {
 
 	//transform one big document string to set of word-strings
-	string cur_doc_str(doc_str);
-	set<string> document_words;
-	string_to_words(cur_doc_str, document_words);
-
+	void* document_words = doc_str_to_doc_words(doc_str);
+	
 	//init cache
-	Cache cache = Cache(document_words.begin());
-
+	void* cache = init_cache(document_words);
 
 	//match all queries
-	set<QueryID> ids;
-	for(const Query &query: queries.getAllQuerys()){
+	void* ids = init_ids();
 
-		//match query (true for match and false for no match)
-		if(matchQuery(query, document_words, cache)){
+	for(unsigned int i = 0; i< queries_size(queries); i++){
+		if(match_query(queries, i, document_words, cache)){
 
 			//store query_ids of matching queries
-			set<QueryID> &set_ids = queries.getIDs(query);
-			ids.insert(set_ids.begin(), set_ids.end());
+			add_ids(queries, i, ids);
 		}
 	}
-
+	 
 	//create document object
 	Document document;
-	document.doc_id=doc_id;
-	document.num_res=ids.size();
-	document.query_ids = (QueryID*) malloc(document.num_res * sizeof(QueryID));
-	unsigned int i = 0;
-    for (const QueryID& id : ids) {
-        document.query_ids[i++] = id;
-    }
+	document.doc_id = doc_id;
+	document.num_res = ids_to_array(ids, &document.query_ids);
 
 	//add document
 	docs.push(document);

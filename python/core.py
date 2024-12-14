@@ -8,20 +8,55 @@
 #######################################################
 ###################### Libraries ######################
 
+from ctypes import POINTER, c_bool, c_char_p, c_uint, c_void_p
+import ctypes
 from helper.helper import *
 
 #######################################################
 ################# Global Variables ###################
 
 #Keeps all currently active queries
-queries = Queries()
+queries: c_void_p
 # Keeps all currently available results that has not been returned yet
 docs: list[Document] = []
+core = ctypes.CDLL("../libcore.so")
+core.doc_str_to_doc_words.restype = c_void_p
+core.doc_str_to_doc_words.argtypes = [c_char_p]
+
+core.init_cache.restype = c_void_p
+core.init_cache.argtypes = [c_void_p]
+
+core.init_ids.restype = c_void_p
+
+core.queries_size.restype = c_uint
+core.queries_size.argtypes = [c_void_p]
+
+core.query_by_index.restype = c_void_p
+core.query_by_index.argtypes = [c_void_p, c_uint]
+
+core.match_query.restype = c_bool
+core.match_query.argtypes = [c_void_p, c_uint, c_void_p, c_void_p]
+
+core.add_ids.restype = None
+core.add_ids.argtypes = [c_void_p, c_uint, c_void_p]
+
+core.ids_to_array.restype = c_uint
+core.ids_to_array.argtypes = [c_void_p, POINTER(POINTER(c_uint))]
+
+core.start_query.restype = None
+core.start_query.argtypes = [c_void_p, c_uint, c_char_p, c_uint, c_uint]
+
+core.end_query.restype = None
+core.end_query.argtypes = [c_void_p, c_uint]
+
+core.init_queries.restype = c_void_p
 
 #######################################################
 ################### Helper Functions ##################
 def InitializeIndex():
-	return ErrorCode.EC_SUCCESS
+    global queries
+    queries = core.init_queries()
+    return ErrorCode.EC_SUCCESS
 
 def DestroyIndex():
 	return ErrorCode.EC_SUCCESS
@@ -66,28 +101,37 @@ def matchQuery(query: Query, doc_words: list[str]) -> bool:
 #################### Main Functions ###################
 
 def StartQuery(query_id: QueryID, query_str: str, match_type: MatchType, match_dist: int) -> ErrorCode:
-	queries.add(
-        id = query_id,
-        query = Query(match_type, match_dist, tuple(query_str.split())))
-	return ErrorCode.EC_SUCCESS
+    core.start_query(queries, ctypes.c_uint(int(query_id)), query_str.encode(), ctypes.c_uint(int(match_type.value)), ctypes.c_uint(match_dist))
+    return ErrorCode.EC_SUCCESS
 
 def EndQuery(query_id: QueryID) -> ErrorCode:
-	queries.remove(query_id)
-	return ErrorCode.EC_SUCCESS
+    core.end_query(queries, ctypes.c_uint(int(query_id)))
+	#queries.remove(query_id)
+    return ErrorCode.EC_SUCCESS
 	
 def MatchDocument(doc_id: DocumentID, doc_str: str) -> ErrorCode:
-	doc_words: list[str] = [str(x) for x in doc_str.split(' ') if x.strip()]
-	# Matching
-	ids: set[QueryID] = set()
-	for query in queries.getAllQuerys():
-		if matchQuery(query, doc_words):
-			set_ids = queries.getIDs(query)
-			ids.update(set_ids)
+    global queries
+    doc_words: c_void_p = core.doc_str_to_doc_words(doc_str.encode())
+    ids: c_void_p = core.init_ids()
+    cache: c_void_p = core.init_cache(doc_words)
+    size: int = int(core.queries_size(queries))
 
-	# Creating document object
-	doc = Document(doc_id, len(ids), sorted(ids))
-	docs.append(doc)
-	return ErrorCode.EC_SUCCESS
+    for i in range(size):
+        if(core.match_query(queries, i, doc_words, cache)):
+            core.add_ids(queries, i, ids)
+    
+    ids_as_array = ctypes.POINTER(ctypes.c_uint)()
+
+    # Rufe ids_to_array auf und übergebe den Zeiger auf den Zeiger
+    n = core.ids_to_array(ids, ctypes.byref(ids_as_array))
+
+
+    array = []
+    for i in range(n):
+        array.append(int(ids_as_array[i]))
+    doc = Document(doc_id, n, array)
+    docs.append(doc)
+    return ErrorCode.EC_SUCCESS
 
 # Get the first undeliverd resuilt from "docs" and return it
 def GetNextAvailRes() -> tuple[ErrorCode, DocumentID, int, tuple[int]]:
