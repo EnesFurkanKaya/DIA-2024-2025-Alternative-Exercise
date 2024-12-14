@@ -10,6 +10,7 @@
 
 from ctypes import POINTER, c_bool, c_char_p, c_uint, c_void_p
 import ctypes
+
 from helper.helper import *
 
 #######################################################
@@ -106,29 +107,49 @@ def StartQuery(query_id: QueryID, query_str: str, match_type: MatchType, match_d
 
 def EndQuery(query_id: QueryID) -> ErrorCode:
     core.end_query(queries, ctypes.c_uint(int(query_id)))
-	#queries.remove(query_id)
     return ErrorCode.EC_SUCCESS
-	
+
+    """_summary_
+       we wrapped c++ code in c functions, wrapped every used c++ class with void pointers
+       and have now this trash function that noone understands BUT we are 0.8 as fast as the c++ code
+       and need less then 1 second instead of 5 minutes.
+    """
 def MatchDocument(doc_id: DocumentID, doc_str: str) -> ErrorCode:
+
     global queries
+    
+    #transfrom the document from char* to (void*)&std::set<std::string>
     doc_words: c_void_p = core.doc_str_to_doc_words(doc_str.encode())
+
+    #returns a new set with c++ type (void*)&std::set<QueryID>
     ids: c_void_p = core.init_ids()
+
+    #return a new cache with c++ type (void*)&Cache
     cache: c_void_p = core.init_cache(doc_words)
+
+    #returns the number of unique query's in queries for the only reason to be used in the next line  
     size: int = int(core.queries_size(queries))
 
+    #iterate over all unique query's
     for i in range(size):
+        # check if the query matches with the current document.
+        # core.match_query is the c++ version of the python function matchQuery
+        # and needs:
+        #  - queries, i to find the query
+        #  - doc_words and cache for the matching
+        # it returns a bool
         if(core.match_query(queries, i, doc_words, cache)):
+            # add the queryID's related to the query at index i in 
+            # queries to our already exisiting collection of id's
             core.add_ids(queries, i, ids)
-    
-    ids_as_array = ctypes.POINTER(ctypes.c_uint)()
 
-    # Rufe ids_to_array auf und übergebe den Zeiger auf den Zeiger
+    #converts C++ type std::set<QueryID> to C type unsigned int**
+    ids_as_array = ctypes.POINTER(ctypes.c_uint)()
     n = core.ids_to_array(ids, ctypes.byref(ids_as_array))
 
+    #converts C type unsigned int** to python list
+    array = list(map(int, ids_as_array[:n]))
 
-    array = []
-    for i in range(n):
-        array.append(int(ids_as_array[i]))
     doc = Document(doc_id, n, array)
     docs.append(doc)
     return ErrorCode.EC_SUCCESS

@@ -1,16 +1,15 @@
 from dataclasses import dataclass
+import cProfile
 import datetime
 from enum import Enum
 import time
 from typing import TextIO
-from array import array
 from collections import deque
-
 from python.core import DestroyIndex, EndQuery, GetNextAvailRes, InitializeIndex, MatchDocument, StartQuery
 from python.helper.helper import ErrorCode, MatchType
 
 INPUT_FILE_PATH = "../test_data/small_test.txt"
-OUTPUT_FILE_PATH = "../results.txt"
+OUTPUT_FILE_PATH = "../result.txt"
 
 class LineType(Enum):
     START_QUERY = "s"
@@ -41,7 +40,7 @@ class UpdateResultsLine:
     first_res: int
     num_res: int
     results: list[int]
-    
+
 def process_line(line: str) -> (StartQueryLine | EndQueryLine | MatchDocumentLine | UpdateResultsLine):
     parts: list[str] = line.split()
     line_type: LineType = LineType(parts[0])
@@ -70,7 +69,7 @@ def process_line(line: str) -> (StartQueryLine | EndQueryLine | MatchDocumentLin
             result = UpdateResultsLine(
                 first_res = int(parts[1]),
                 num_res = int(parts[2]),
-                results = [int(x) for x in parts[3:]]
+                results = list(map(int, parts[3:]))
             )
 
     return result
@@ -99,7 +98,7 @@ def check_cur_results(cur_results: deque[list[int]], next_doc_id: int):
         next_doc_id += 1
 
     return ErrorCode.EC_SUCCESS, next_doc_id
-    
+
 def test_sigmoid(input_file: TextIO, output_file: TextIO, time_limit_seconds: int) -> None:
 
     output_file.write("Start Test ...\n")
@@ -143,15 +142,24 @@ def test_sigmoid(input_file: TextIO, output_file: TextIO, time_limit_seconds: in
         if time.time() > end_time:
             output_file.write("time limit of "+str(time_limit_seconds)+" sec exceeded\n")
             break
-
+    
+    error, next_doc_id = check_cur_results(cur_results, next_doc_id)
+    if(error.value != ErrorCode.EC_SUCCESS.value):
+        output_file.write(" last results are wrong :/ "+ str(error))
+        return
+    
     duration: float = time.time() - start_time
     output_file.write("Duration: " + str(datetime.timedelta(seconds= duration))+ "\n")
     output_file.write("Throughput: "+ str(next_doc_id/duration) + " documents per second\n")
     DestroyIndex()
     output_file.write("Test finished\n")
 
+profiler = cProfile.Profile()
+profiler.enable()
 input_file: TextIO = open(INPUT_FILE_PATH, 'r')
 output_file: TextIO = open(OUTPUT_FILE_PATH, 'w')
 test_sigmoid(input_file, output_file, 10)
 input_file.close()
-output_file.close()
+output_file.close()    
+profiler.disable()
+profiler.print_stats(sort="cumtime")
