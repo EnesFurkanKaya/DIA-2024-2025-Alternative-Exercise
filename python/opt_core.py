@@ -11,6 +11,7 @@
 ###################### Libraries ######################
 
 from helper.helper import *
+from concurrent.futures import ThreadPoolExecutor
 
 #######################################################
 ################# Global Variables ###################
@@ -19,6 +20,9 @@ from helper.helper import *
 queries = Queries()
 # Keeps all currently available results that has not been returned yet
 docs = []
+
+# Initialize a thread pool with the number of available cores
+executor = ThreadPoolExecutor()
 
 #######################################################
 ################### Helper Functions ##################
@@ -96,21 +100,27 @@ def EndQuery(query_id: QueryID):
 	queries.remove(query_id)
 	return ErrorCode.EC_SUCCESS
 	
-def MatchDocument(doc_id: DocumentID, doc_str: str):
-	doc_words = [str(x) for x in doc_str.split(' ') if x.strip()]
+def MatchDocument(doc_id: DocumentID, doc_str: str) -> ErrorCode:
+    doc_words = [str(x) for x in doc_str.split(' ') if x.strip()]
 
-	# Matching
-	ids = set()
-	for query in queries.getAllQuerys:
-		if matchQuery(query, doc_words):
-			set_ids =queries.getIDs(query)
-			ids.update(set_ids)
+    # Matching
+    ids = set()
 
-	# Creating document object
-	doc = Document(doc_id, len(ids), ids)
-	docs.append(doc)
+    def process_query(query):
+        if matchQuery(query, doc_words):
+            set_ids = queries.getIDs(query)
+            ids.update(set_ids)
 
-	return ErrorCode.EC_SUCCESS
+    # Use the thread pool to process queries in parallel
+    futures = [executor.submit(process_query, query) for query in queries.getAllQuerys()]
+    for future in futures:
+        future.result()
+
+    # Creating document object
+    doc = Document(doc_id, len(ids), ids)
+    docs.append(doc)
+
+    return ErrorCode.EC_SUCCESS
 
 # Get the first undeliverd resuilt from "docs" and return it
 def GetNextAvailRes():

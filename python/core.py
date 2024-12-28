@@ -10,6 +10,7 @@
 
 from ctypes import POINTER, c_bool, c_char_p, c_uint, c_void_p
 import ctypes
+from concurrent.futures import ThreadPoolExecutor
 
 from helper.helper import *
 
@@ -51,6 +52,9 @@ core.end_query.restype = None
 core.end_query.argtypes = [c_void_p, c_uint]
 
 core.init_queries.restype = c_void_p
+
+# Initialize a thread pool with the number of available cores
+executor = ThreadPoolExecutor()
 
 #######################################################
 ################### Helper Functions ##################
@@ -130,18 +134,14 @@ def MatchDocument(doc_id: DocumentID, doc_str: str) -> ErrorCode:
     #returns the number of unique query's in queries for the only reason to be used in the next line  
     size: int = int(core.queries_size(queries))
 
-    #iterate over all unique query's
-    for i in range(size):
-        # check if the query matches with the current document.
-        # core.match_query is the c++ version of the python function matchQuery
-        # and needs:
-        #  - queries, i to find the query
-        #  - doc_words and cache for the matching
-        # it returns a bool
-        if(core.match_query(queries, i, doc_words, cache)):
-            # add the queryID's related to the query at index i in 
-            # queries to our already exisiting collection of id's
+    def process_query(i):
+        if core.match_query(queries, i, doc_words, cache):
             core.add_ids(queries, i, ids)
+
+    # Use the thread pool to process queries in parallel
+    futures = [executor.submit(process_query, i) for i in range(size)]
+    for future in futures:
+        future.result()
 
     #converts C++ type std::set<QueryID> to C type unsigned int**
     ids_as_array = ctypes.POINTER(ctypes.c_uint)()
