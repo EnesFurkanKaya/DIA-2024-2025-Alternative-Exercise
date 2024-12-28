@@ -1,16 +1,33 @@
 from dataclasses import dataclass
+import cProfile
 import datetime
 from enum import Enum
 import time
 from typing import TextIO
-from array import array
 from collections import deque
+from opt_core import DestroyIndex, EndQuery, GetNextAvailRes, InitializeIndex, MatchDocument, StartQuery
+from helper.helper import ErrorCode, MatchType
+from pyspark.sql import SparkSession
+from pyspark import SparkContext, SparkConf
+#spark = SparkSession.builder.appName("QueryDocumentMatching").getOrCreate()
 
-from python.core import DestroyIndex, EndQuery, GetNextAvailRes, InitializeIndex, MatchDocument, StartQuery
-from python.helper.helper import ErrorCode, MatchType
+testing = 2 # 0 -> core, 1 -> opt_core, 2 -> opt_core_v2, 3 -> opt_core_apache
+if testing == 0:
+    from core import DestroyIndex, EndQuery, GetNextAvailRes, InitializeIndex, MatchDocument, StartQuery
+    OUTPUT_FILE_PATH = "../results/result_core.txt"
+elif testing == 1:
+    from opt_core import DestroyIndex, EndQuery, GetNextAvailRes, InitializeIndex, MatchDocument, StartQuery
+    OUTPUT_FILE_PATH = "../results/result_opt_core.txt"
+elif testing == 2:
+    from opt_core_v2 import DestroyIndex, EndQuery, GetNextAvailRes, InitializeIndex, MatchDocument, StartQuery
+    OUTPUT_FILE_PATH = "../results/result_opt_core_v2.txt"
+elif testing == 3:
+    from apachespark import DestroyIndex, EndQuery, GetNextAvailRes, InitializeIndex, MatchDocument, StartQuery
+    OUTPUT_FILE_PATH = "../results/result_apachespark.txt"
+sc = SparkContext("local", "Example")
+sc.getConf().set("spark.executor.cores", "2")
 
 INPUT_FILE_PATH = "../test_data/small_test.txt"
-OUTPUT_FILE_PATH = "../results.txt"
 
 class LineType(Enum):
     START_QUERY = "s"
@@ -41,7 +58,7 @@ class UpdateResultsLine:
     first_res: int
     num_res: int
     results: list[int]
-    
+
 def process_line(line: str) -> (StartQueryLine | EndQueryLine | MatchDocumentLine | UpdateResultsLine):
     parts: list[str] = line.split()
     line_type: LineType = LineType(parts[0])
@@ -70,7 +87,7 @@ def process_line(line: str) -> (StartQueryLine | EndQueryLine | MatchDocumentLin
             result = UpdateResultsLine(
                 first_res = int(parts[1]),
                 num_res = int(parts[2]),
-                results = [int(x) for x in parts[3:]]
+                results = list(map(int, parts[3:]))
             )
 
     return result
@@ -99,7 +116,7 @@ def check_cur_results(cur_results: deque[list[int]], next_doc_id: int):
         next_doc_id += 1
 
     return ErrorCode.EC_SUCCESS, next_doc_id
-    
+
 def test_sigmoid(input_file: TextIO, output_file: TextIO, time_limit_seconds: int) -> None:
 
     output_file.write("Start Test ...\n")
@@ -143,15 +160,25 @@ def test_sigmoid(input_file: TextIO, output_file: TextIO, time_limit_seconds: in
         if time.time() > end_time:
             output_file.write("time limit of "+str(time_limit_seconds)+" sec exceeded\n")
             break
-
+    
+    error, next_doc_id = check_cur_results(cur_results, next_doc_id)
+    if(error.value != ErrorCode.EC_SUCCESS.value):
+        output_file.write(" last results are wrong :/ "+ str(error))
+        return
+    
     duration: float = time.time() - start_time
     output_file.write("Duration: " + str(datetime.timedelta(seconds= duration))+ "\n")
     output_file.write("Throughput: "+ str(next_doc_id/duration) + " documents per second\n")
     DestroyIndex()
     output_file.write("Test finished\n")
 
+
+profiler = cProfile.Profile()
+profiler.enable()
 input_file: TextIO = open(INPUT_FILE_PATH, 'r')
 output_file: TextIO = open(OUTPUT_FILE_PATH, 'w')
-test_sigmoid(input_file, output_file, 1000)
+test_sigmoid(input_file, output_file, 10)
 input_file.close()
-output_file.close()
+output_file.close()    
+profiler.disable()
+profiler.print_stats(sort="cumtime")

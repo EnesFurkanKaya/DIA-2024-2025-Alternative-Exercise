@@ -7,4 +7,5 @@ libcore.so
 testdriver
 distance.o
 result.txt
+results
 .venv

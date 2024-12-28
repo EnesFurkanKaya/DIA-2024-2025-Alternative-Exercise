@@ -23,11 +23,10 @@ cat result.txt
 
 ## Testing for Python and Apache Spark Instructions
 
-To test the implementation, follow these steps:
+To test the python implementation, follow these steps:
 
 ```bash
 cd DIA-2024-2025-Alternative-Exercise/
-make clean
 make setup_python
 ```
 Make sure to update your python interpreter to the .venv path in your workspace:
@@ -43,6 +42,13 @@ Activate the Virtual Environment:
 
 ```bash
 source .venv/bin/activate
+```
+
+Change your directory and start test.py:
+
+```bash
+cd ./python
+python test.py
 ```
 
 
