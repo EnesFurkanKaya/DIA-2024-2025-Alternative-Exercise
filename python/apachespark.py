@@ -11,7 +11,7 @@
 from ctypes import POINTER, Structure, c_bool, c_char_p, c_uint, c_void_p, byref, c_size_t
 import ctypes
 
-from helper.helper import *
+from python.helper.helper import *
 from pyspark.sql import SparkSession
 from pyspark import SparkConf, SparkContext
 from dask import delayed, compute

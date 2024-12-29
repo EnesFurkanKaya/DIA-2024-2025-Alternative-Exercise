@@ -6,7 +6,7 @@
 from ctypes import POINTER, Structure, c_bool, c_char_p, c_uint, c_void_p, byref
 import ctypes
 
-from helper.helper import *
+from python.helper.helper import *
 
 #######################################################
 ################# Global Variables ###################
@@ -17,7 +17,7 @@ cache: c_void_p
 
 # Keeps all currently available results that has not been returned yet
 docs: list[Document] = []
-core = ctypes.CDLL("../libcore.so")
+core = ctypes.CDLL("libcore.so")
 
 core.init_ids.restype = c_void_p
 

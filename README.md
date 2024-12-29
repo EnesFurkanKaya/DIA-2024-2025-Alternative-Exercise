@@ -17,16 +17,10 @@ To test the implementation, follow these steps:
 ```bash
 cd DIA-2024-2025-Alternative-Exercise/
 make setup
-./testdriver test_data/small_test.txt
-cat result.txt
 ```
-
-## Testing for Python and Apache Spark Instructions
-
-To test the python implementation, follow these steps:
+Then, setup the python environment for the required libraries:
 
 ```bash
-cd DIA-2024-2025-Alternative-Exercise/
 make setup_python
 ```
 Make sure to update your python interpreter to the .venv path in your workspace:
@@ -44,13 +38,19 @@ Activate the Virtual Environment:
 source .venv/bin/activate
 ```
 
-Change your directory and start test.py:
+Change your directory and start the speed test using:
 
 ```bash
-cd ./python
-python test.py
+python benchmark.py
 ```
 
+To clean the virtual environment and compiled c files:
+
+```bash
+make clean
+```
+
+(also make sure to delete the stored pycache files under ./python)
 
 
 
