@@ -33,12 +33,6 @@ Search for "Python: Select Interpreter" and click on "Enter interpreter path..."
 
 Close and Reopen Visual Studio Code if necessary
 
-Activate the Virtual Environment:
-
-```bash
-source .venv/bin/activate
-```
-
 Start the speed test using:
 
 ```bash
@@ -50,8 +44,6 @@ To clean the virtual environment and compiled c files:
 ```bash
 make clean
 ```
-
-(also make sure to delete the stored pycache files under ./python)
 
 
 

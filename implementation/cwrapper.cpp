@@ -7,11 +7,6 @@
 #include <memory>
 #include <unordered_set>
 #include <math.h>
-#include <future>
-#include <mutex>
-#include <thread>
-#include <shared_mutex>
-
 
 struct WordCacheKey {
     string word;
@@ -38,7 +33,7 @@ namespace std {
 }
 
 using QueryCache = unordered_map<WordCacheKey, unordered_set<string>>;
-std::shared_timed_mutex cache_mutex;
+
 
 void* InitializeCache() {
     QueryCache* cache = new QueryCache();

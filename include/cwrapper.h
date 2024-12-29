@@ -30,7 +30,7 @@ void* init_queries();
 
 bool match_query_og(void *queries, unsigned int index, void *document_words);
 
-bool matchQuery3(const Query& query, const unordered_set<string>& document_words);
+bool matchQuery3(const Query& query, const set<string>& document_words);
 
 void* InitializeCache();
 
@@ -41,4 +41,5 @@ void *doc_str_to_doc_words_unorderedset(const char *doc_str);
 bool match_query_caching(void *queries, unsigned int index, void *document_words, void* cache);
 
 bool matchQuery_caching(const Query& query, const unordered_set<string>& document_words, void* cache);
+
 }

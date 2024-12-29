@@ -46,6 +46,9 @@ clean:
 	rm -f $(PROGRAMS) lib$(LIBRARY).so
 	find . -name '*.o' -print | xargs rm -f
 	rm -rf $(VENV_DIR)
+	rm -f result.txt
+	rm -f results/*.txt
+	find . -name "__pycache__" -exec rm -rf {} +
 
 # Setup for Python environment (no C programs)
 .PHONY: setup_python

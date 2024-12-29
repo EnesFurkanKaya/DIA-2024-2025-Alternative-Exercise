@@ -6,9 +6,6 @@ import time
 from typing import TextIO
 from collections import deque
 from python.helper.helper import ErrorCode, MatchType
-from pyspark.sql import SparkSession
-from pyspark import SparkContext, SparkConf
-
 # 0 -> core, 1 -> opt_core, 2 -> opt_core_v2, 3 -> opt_core_apache
 def test_matching(which: int):
     INPUT_FILE_PATH = "test_data/small_test.txt"
@@ -22,10 +19,8 @@ def test_matching(which: int):
         from python.opt_core_v2 import DestroyIndex, EndQuery, GetNextAvailRes, InitializeIndex, MatchDocument, StartQuery
         OUTPUT_FILE_PATH = "results/result_opt_core_v2.txt"
     elif which == 3:
-        sc = SparkContext("local", "Example")
-        sc.getConf().set("spark.executor.cores", "2")
-        from python.apachespark import DestroyIndex, EndQuery, GetNextAvailRes, InitializeIndex, MatchDocument, StartQuery
-        OUTPUT_FILE_PATH = "results/result_apachespark.txt"
+        from python.dask import DestroyIndex, EndQuery, GetNextAvailRes, InitializeIndex, MatchDocument, StartQuery
+        OUTPUT_FILE_PATH = "results/result_dask.txt"
 
     class LineType(Enum):
         START_QUERY = "s"
@@ -179,3 +174,7 @@ def test_matching(which: int):
     output_file.close()    
     #profiler.disable()
     #profiler.print_stats(sort="cumtime")
+
+
+if __name__ == "__main__":
+    test_matching(3)

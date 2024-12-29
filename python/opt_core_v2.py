@@ -81,15 +81,6 @@ def EndQuery(query_id: QueryID) -> ErrorCode:
     core.end_query(queries, ctypes.c_uint(int(query_id)))
     return ErrorCode.EC_SUCCESS
 
-def does_query_match(query_words, match_type, match_dist, doc_words):
-    """
-    Check if all words in the query match the document using match_single_word.
-    """
-    c_strings = (ctypes.c_char_p * len(doc_words))(*[s.encode('utf-8') for s in doc_words])
-    b_strings = (ctypes.c_char_p * len(query_words))(*[s.encode('utf-8') for s in query_words])
-
-    return bool(core.match_query_apache(b_strings, len(b_strings), match_type, match_dist, c_strings, len(c_strings)))
-    
 
 def MatchDocument(doc_id: DocumentID, doc_str: str) -> ErrorCode:
     
@@ -108,6 +99,7 @@ def MatchDocument(doc_id: DocumentID, doc_str: str) -> ErrorCode:
     #iterate over all unique query's
     for i in range(size):
         if(core.match_query_caching(queries, i, doc_words, cache)):
+            #adds matched query ids to variable ids
             core.add_ids(queries, i, ids)
 
     #converts C++ type std::set<QueryID> to C type unsigned int**
