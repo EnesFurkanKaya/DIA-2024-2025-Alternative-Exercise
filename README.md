@@ -32,13 +32,14 @@ Press `Ctrl+Shift+P`(Windows) or `Cmd+Shift+P`(Mac) to open the command palette.
 Search for "Python: Select Interpreter" and click on "Enter interpreter path...". And enter .venv path.
 
 Close and Reopen Visual Studio Code if necessary
+
 Activate the Virtual Environment:
 
 ```bash
 source .venv/bin/activate
 ```
 
-Change your directory and start the speed test using:
+Start the speed test using:
 
 ```bash
 python benchmark.py
