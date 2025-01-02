@@ -109,7 +109,7 @@ result_files = {
 data_path = "test_data/small_test.txt"
 command = ["./testdriver", data_path]
 print("Running reference solution...")
-#run_reference_core(command)
+run_reference_core(command)
 print("Done.")
 print("Running ex. 1: core solution...")
 run_solution_core()
