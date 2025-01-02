@@ -47,7 +47,7 @@ clean:
 	find . -name '*.o' -print | xargs rm -f
 	rm -rf $(VENV_DIR)
 	rm -f result.txt
-	rm -f results/*.txt
+	rm -rf results
 	find . -name "__pycache__" -exec rm -rf {} +
 
 # Setup for Python environment (no C programs)

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import os
 import cProfile
 import datetime
 from enum import Enum
@@ -164,6 +165,7 @@ def test_matching(which: int):
 
     #profiler = cProfile.Profile()
     #profiler.enable()
+    os.makedirs("results", exist_ok=True)
     input_file: TextIO = open(INPUT_FILE_PATH, 'r')
     output_file: TextIO = open(OUTPUT_FILE_PATH, 'w')
     test_sigmoid(input_file, output_file, 10)
