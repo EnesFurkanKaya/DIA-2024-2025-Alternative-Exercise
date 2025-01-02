@@ -8,46 +8,24 @@
 #include <unordered_set>
 #include <math.h>
 
-struct WordCacheKey {
-    string word;
-    MatchType match_type;
-    unsigned int match_dist;
-
-    bool operator==(const WordCacheKey& other) const {
-        return word == other.word &&
-               match_type == other.match_type &&
-               match_dist == other.match_dist;
-    }
-};
-
-namespace std {
-    template<>
-    struct hash<WordCacheKey> {
-        size_t operator()(const WordCacheKey& key) const {
-            size_t hash_value = std::hash<string>()(key.word);
-            hash_value ^= std::hash<int>()(key.match_type) + 0x9e3779b9 + (hash_value << 6) + (hash_value >> 2);
-            hash_value ^= std::hash<int>()(key.match_dist) + 0x9e3779b9 + (hash_value << 6) + (hash_value >> 2);
-            return hash_value;
-        }
-    };
-}
-
 using QueryCache = unordered_map<WordCacheKey, unordered_set<string>>;
 
-
-void* InitializeCache() {
+// Initialize the QueryCache
+void* initializeCache() {
     QueryCache* cache = new QueryCache();
     return static_cast<void*>(cache); // Return an empty cache
 }
 
+// Free the allocated memory for the QueryCache
 void freeCache(void* cache){
     if (cache != nullptr) {
-        QueryCache* actual_cache = static_cast<QueryCache*>(cache); // Cast void* back to Cache*
-        actual_cache->clear();  // Clear the contents of the cache
-        delete actual_cache;    // Free the allocated memory
+        QueryCache* actual_cache = static_cast<QueryCache*>(cache); // Cast void* back to QueryCache*
+        actual_cache->clear();  // Clear all the stored keys
+        delete actual_cache;    // Free the allocated memory for the cache
     }
 }
 
+// Transfrom the document from char* to (void*)&std::unordered_set<std::string>
 void *doc_str_to_doc_words_unorderedset(const char *doc_str)
 {
     std::string cur_doc_str(doc_str);
@@ -62,6 +40,7 @@ void *doc_str_to_doc_words_unorderedset(const char *doc_str)
     return (void*) document_words;
 }
 
+// Transfrom the document from char* to (void*)&std::set<std::string>
 void *doc_str_to_doc_words(const char *doc_str)
 {
     std::string cur_doc_str(doc_str);
@@ -76,103 +55,28 @@ void *doc_str_to_doc_words(const char *doc_str)
     return (void*) document_words;
 }
 
-void *init_cache(void *document_words){
-    std::set<std::string>* string_set = static_cast<std::set<std::string>*>(document_words);
-    Cache* cache = new Cache((*string_set).begin());
-    return (void*) cache;
-}
-
+// Return a new set with c++ type (void*)&std::set<QueryID>
 void *init_ids()
 {
     set<QueryID>* ids = new set<QueryID>();
     return (void*) ids;
 }
 
+// Return the number of unique queries in Queries
 unsigned int queries_size(void *queries)
 {
     Queries* qs = (Queries*) queries;
     return qs->size();
 }
 
+// Get the query by index
 void* query_by_index(void *queries, unsigned int index)
 {
     return (void*) &(((Queries*) queries)->getQueryByIndex(index));
 }
 
-bool matchQuery2(const Query& query, const set<string>& document_words, Cache& cache){
-	unsigned int distance;
-	switch (query.match_type){
-		case MT_EXACT_MATCH:
-			for(const string& query_word: query.words){
-				if (document_words.find(query_word) == document_words.end()) {
-					return false;
-				}
-			}
-			return true;
-		case MT_HAMMING_DIST:
-			for(const string& query_word: query.words){
-
-				// cache lookup for minimal distance computed so far
-				CacheValue cacheValue = cache.getHammingDistance(query_word);
-				distance = cacheValue.distance;
-				auto it = cacheValue.position;
-
-				// checks if the cached distance is small enough
-				if(distance <= query.match_dist) continue;
-
-				// checks if for the cached value already the entire document is searched
-				if(it == document_words.end()) return false;
-
-				// compare query_word with the remaining part of the document and update cache
-				for(;it!=document_words.end(); ++it) {
-					distance = min(distance, hammingDistance(query_word, it->data()));
-					if(distance <= query.match_dist) break;
-				}
-				cache.addHammingDistance(query_word, distance, it);
-
-				// check if the minimal distance between query_word and any word of the document is small enough
-				if(distance > query.match_dist)return false;
-			} 
-			return true;
-		case MT_EDIT_DIST:
-			for(const string& query_word: query.words){
-	
-				// cache lookup for minimal distance computed so far
-				CacheValue cacheValue = cache.getEditDistance(query_word);
-				distance = cacheValue.distance;
-				auto it = cacheValue.position;
-
-				// checks if for the cached value already the entire document is searched
-				if(distance <= query.match_dist) continue;
-
-				// compare query_word with the remaining part of the document and update cache
-				if(it == document_words.end()) return false;
-	
-				// compare query_word with the remaining part of the document and update cache
-				for(;it!=document_words.end(); ++it) {
-                    // If the word is much longer than the match_dist, no need to check the distance
-					distance = min(distance, editDistance(query_word, it->data()));
-					if(distance <= query.match_dist) break;
-				}
-				cache.addEditDistance(query_word, distance, it);
-
-				// check if the minimal distance between query_word and any word of the document is small enough
-				if(distance > query.match_dist)return false;
-			}
-			return true;
-	}
-	perror("query match type not allowed! ");
-	return false;
-}
-
-bool match_query(void *queries, unsigned int index, void *document_words, void *cache)
-{
-
-    return matchQuery2(*(Query*)query_by_index(queries, index), *static_cast<std::set<std::string>*>(document_words), *static_cast<Cache*>(cache));
-
-}
-
-bool matchQuery3(const Query& query, const set<string>& document_words){
+// Main Match Query-Document function for core.py
+bool matchQuery(const Query& query, const set<string>& document_words){
     bool match;
     switch (query.match_type){
         case MT_EXACT_MATCH:
@@ -199,7 +103,6 @@ bool matchQuery3(const Query& query, const set<string>& document_words){
             for(const auto& query_word: query.words){
                 match = false;
                 for(const auto& doc_word: document_words){
-                    if (abs(static_cast<int>(query_word.size()) - static_cast<int>(doc_word.size())) > query.match_dist) continue;
                     if(editDistance(query_word, doc_word) <= query.match_dist){
                         match = true;
                         break;
@@ -214,17 +117,18 @@ bool matchQuery3(const Query& query, const set<string>& document_words){
     return false;
 }
 
-bool match_query_og(void *queries, unsigned int index, void *document_words){
-    return matchQuery3(*(Query*)query_by_index(queries, index), *static_cast<std::set<std::string>*>(document_words));
+bool match_query(void *queries, unsigned int index, void *document_words){
+    return matchQuery(*(Query*)query_by_index(queries, index), *static_cast<std::set<std::string>*>(document_words));
 }
 
+// Main Optimized Match Query-Document function for opt_core.py
 bool matchQuery_caching(const Query& query, const unordered_set<string>& document_words, void* cache){
     QueryCache* actual_cache = static_cast<QueryCache*>(cache);
     for (const auto& query_word : query.words){
         bool match = false;
         unordered_set<string> matched_words;
         WordCacheKey key{query_word, query.match_type, query.match_dist};
-        // Look up for the doc_words in the cache
+        // Look up for the key in the cache
         auto cache_iter = actual_cache->find(key);
 
         if (cache_iter != actual_cache->end()) {
@@ -241,7 +145,7 @@ bool matchQuery_caching(const Query& query, const unordered_set<string>& documen
         if (match){
             continue;
         }
-        // If not found any cache-hit, calculate the distance and store
+        // If any cache-hit is not found, calculate the distance and store the matching words
         switch(query.match_type){
             case MT_EXACT_MATCH:
                 if (document_words.find(query_word) != document_words.end()){
@@ -281,6 +185,7 @@ bool match_query_caching(void *queries, unsigned int index, void *document_words
     return matchQuery_caching(*(Query*)query_by_index(queries, index), *static_cast<std::unordered_set<std::string>*>(document_words), cache);
 }
 
+// Add new ids
 void add_ids(void *queries, unsigned int index, void *new_ids)
 {
     Queries& casted_queries = *static_cast<Queries*>(queries);
@@ -288,6 +193,7 @@ void add_ids(void *queries, unsigned int index, void *new_ids)
     casted_queries.addIDs(casted_ids, casted_queries.getQueryByIndex(index));
 }
 
+// converts C++ type std::set<QueryID> to C type unsigned int**
 unsigned int ids_to_array(void *ids, unsigned int** result_array)
 {
     std::set<QueryID>& ids2= *static_cast<std::set<QueryID>*>(ids);
@@ -300,6 +206,7 @@ unsigned int ids_to_array(void *ids, unsigned int** result_array)
     return i;
 }
 
+// Start Query
 void start_query(void *queries, QueryID query_id, const char *query_str, MatchType match_type, unsigned int match_dist)
 {
     Queries& casted_queries = *static_cast<Queries*>(queries); 
@@ -308,12 +215,14 @@ void start_query(void *queries, QueryID query_id, const char *query_str, MatchTy
 	casted_queries.add(query_id, query);
 }
 
+// End Query
 void end_query(void *queries, QueryID query_id)
 {
     Queries& casted_queries = *static_cast<Queries*>(queries); 
 	casted_queries.remove(query_id);
 }
 
+// Initialize empty new Queries
 void *init_queries()
 {
 	Queries* queries = new Queries;

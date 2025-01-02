@@ -9,12 +9,16 @@ import ctypes
 from python.helper.helper import *
 
 #######################################################
-################# Global Variables ###################
+################# Global Variables ####################
 
 #Keeps all currently active queries
 queries: c_void_p
 # Keeps all currently available results that has not been returned yet
 docs: list[Document] = []
+
+########################################################
+################## Cwrapper Functions ##################
+
 core = ctypes.CDLL("libcore.so")
 
 core.doc_str_to_doc_words.restype = c_void_p
@@ -24,12 +28,6 @@ core.init_ids.restype = c_void_p
 
 core.queries_size.restype = c_uint
 core.queries_size.argtypes = [c_void_p]
-
-core.query_by_index.restype = c_void_p
-core.query_by_index.argtypes = [c_void_p, c_uint]
-
-core.match_query.restype = c_bool
-core.match_query.argtypes = [c_void_p, c_uint, c_void_p, c_char_p]
 
 core.add_ids.restype = None
 core.add_ids.argtypes = [c_void_p, c_uint, c_void_p]
@@ -43,8 +41,8 @@ core.start_query.argtypes = [c_void_p, c_uint, c_char_p, c_uint, c_uint]
 core.end_query.restype = None
 core.end_query.argtypes = [c_void_p, c_uint]
 
-core.match_query_og.restype = c_bool
-core.match_query_og.argtypes = [c_void_p, c_uint, c_void_p]
+core.match_query.restype = c_bool
+core.match_query.argtypes = [c_void_p, c_uint, c_void_p]
 
 core.init_queries.restype = c_void_p
 
@@ -86,7 +84,7 @@ def MatchDocument(doc_id: DocumentID, doc_str: str) -> ErrorCode:
     
     #iterate over all unique query's
     for i in range(size):
-        if(core.match_query_og(queries, i, doc_words)):
+        if(core.match_query(queries, i, doc_words)):
             core.add_ids(queries, i, ids)
 
     #converts C++ type std::set<QueryID> to C type unsigned int**

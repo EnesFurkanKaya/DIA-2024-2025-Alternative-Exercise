@@ -3,3 +3,4 @@ pandas
 dask
 dask[distributed]
 matplotlib
+pyspark

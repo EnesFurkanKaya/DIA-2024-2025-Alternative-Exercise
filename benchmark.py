@@ -24,17 +24,13 @@ def run_reference_core(command):
 def run_solution_core():
     test_matching(which=0)
 
-# Run our opt_core solution for Exercise 2 - Optimal for bigger data
+# Run our opt_core solution for Exercise 2
 def run_solution_opt_core():
     test_matching(which=1)
 
-# Run our opt_core solution for Exercise 2 - Optimal for smaller data
-def run_solution_opt_core2():
-    test_matching(which=2)
-
 # Run our apache solution for Exercise 3
 def run_solution_dask():
-    test_matching(which=3)
+    test_matching(which=2)
 
 # Extract the speed of the implementations from their txt output
 def extract_throughput(file_path):
@@ -62,16 +58,12 @@ def visualize_throughput(results):
         elif label == "results/result_opt_core.txt":
             function_names.append("opt_core")
 
-        elif label == "results/result_opt_core_v2.txt":
-            function_names.append("opt_core v2")
-
         elif label == "results/result_dask.txt":
             function_names.append("dask")
 
     # Plot the results
-    plt.bar(function_names, values, color=['blue', 'green', 'red', 'orange', 'purple'])
-    plt.yscale('log')  # Set y-axis to logarithmic scale
-    plt.ylabel('Throughput (documents/second) [log scale]')
+    plt.bar(function_names, values, color=['blue', 'green', 'red', 'purple'])
+    plt.ylabel('Throughput (documents/second)')
     plt.title('Throughput Comparison')
     plt.show()
 
@@ -89,9 +81,6 @@ def visualize_throughput_2(results):
 
         elif label == "results/result_opt_core.txt":
             function_names.append("opt_core")
-
-        elif label == "results/result_opt_core_v2.txt":
-            function_names.append("opt_core v2")
         
         elif label == "results/result_dask.txt":
             function_names.append("dask")
@@ -114,7 +103,6 @@ result_files = {
         "result.txt": None,
         "results/result_core.txt": None,
         "results/result_opt_core.txt": None,
-        "results/result_opt_core_v2.txt": None,
         "results/result_dask.txt": None
     }
 
@@ -128,9 +116,6 @@ run_solution_core()
 print("Done.")
 print("Running ex. 2: optimized solution...")
 run_solution_opt_core()
-print("Done.")
-print("Running ex. 2: optimized solution vers. 2...")
-run_solution_opt_core2()
 print("Done.")
 print("Running ex. 3: data-parallel solution...")
 run_solution_dask()

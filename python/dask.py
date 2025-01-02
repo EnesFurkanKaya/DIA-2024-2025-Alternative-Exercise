@@ -1,9 +1,4 @@
-# Exercise 1 - Reimplementation for exercise 3
-
-#######################################################
-######################## TODO #########################
-
-# 1. Test with test driver for correctness - Status: Not Tested
+# Exercise 3 - Reimplementation using Dask
 
 #######################################################
 ###################### Libraries ######################
@@ -12,36 +7,32 @@ from ctypes import POINTER, Structure, c_bool, c_char_p, c_uint, c_void_p, byref
 import ctypes
 
 from python.helper.helper import *
-from dask import delayed, compute
-from dask.distributed import Client
+
+from dask import compute
+from pyspark import SparkContext
+sc = SparkContext.getOrCreate()
 
 #######################################################
-################# Global Variables ###################
+################# Global Variables ####################
 
 #Keeps all currently active queries
 queries: c_void_p
 
-query_dict = {}
 # Keeps all currently available results that has not been returned yet
 docs: list[Document] = []
+
+########################################################
+################## Cwrapper Functions ##################
+
 core = ctypes.CDLL("libcore.so")
 
 core.doc_str_to_doc_words.restype = c_void_p
 core.doc_str_to_doc_words.argtypes = [c_char_p]
 
-core.init_cache.restype = c_void_p
-core.init_cache.argtypes = [c_void_p]
-
 core.init_ids.restype = c_void_p
 
 core.queries_size.restype = c_uint
 core.queries_size.argtypes = [c_void_p]
-
-core.query_by_index.restype = c_void_p
-core.query_by_index.argtypes = [c_void_p, c_uint]
-
-core.match_query.restype = c_bool
-core.match_query.argtypes = [c_void_p, c_uint, c_void_p, c_char_p]
 
 core.add_ids.restype = None
 core.add_ids.argtypes = [c_void_p, c_uint, c_void_p]
@@ -55,8 +46,8 @@ core.start_query.argtypes = [c_void_p, c_uint, c_char_p, c_uint, c_uint]
 core.end_query.restype = None
 core.end_query.argtypes = [c_void_p, c_uint]
 
-core.match_query_og.restype = c_bool
-core.match_query_og.argtypes = [c_void_p, c_uint, c_void_p]
+core.match_query.restype = c_bool
+core.match_query.argtypes = [c_void_p, c_uint, c_void_p]
 
 core.init_queries.restype = c_void_p
 
@@ -70,29 +61,13 @@ def InitializeIndex():
 def DestroyIndex():
     return ErrorCode.EC_SUCCESS
 
-def editDistance(a: str, b: str) -> int:
-    table = [e for e in range(len(a)+1)]
-    left = 0
-    for i in range(1, len(b)+1):
-        left = i
-        for j in range(1, len(a)+1):
-            if(a[j - 1] == b[i - 1]):
-                cur = table[j - 1]
-            else:
-                cur = min(min(table[j-1] + 1, table[j] + 1), left + 1)
-            table[j-1] = left
-            left = cur
-        table[len(a)]=left
-    return left
-
-def hammingDistance(a: str, b: str) -> int:
-    if(len(a)!=len(b)):
-        return maxsize
-    sum = 0
-    for i in range(len(a)):
-        if(a[i]!=b[i]):
-            sum+=1
-    return sum
+def match_query_on_doc(queries, doc_words, query_idx: int) -> bool:
+    local_ids = []
+    # Perform the match for a specific query
+    if bool(core.match_query(queries, query_idx, doc_words)):
+        local_ids.append(query_idx)
+    return local_ids
+    
 
 #######################################################
 #################### Main Functions ###################
@@ -107,13 +82,39 @@ def EndQuery(query_id: QueryID) -> ErrorCode:
     core.end_query(queries, ctypes.c_uint(int(query_id)))
     return ErrorCode.EC_SUCCESS
 
-def match_query_on_doc(queries, doc_words, query_idx: int, ids: c_void_p) -> bool:
-    local_ids = []
-    # Perform the match for a specific query
-    if bool(core.match_query_og(queries, query_idx, doc_words)):
-        local_ids.append(query_idx)
-    return local_ids
+# Apache Spark - Could not serialize object: ValueError: ctypes objects containing pointers cannot be pickled
+def MatchDocument_apache(doc_id: DocumentID, doc_str: str) -> ErrorCode:
     
+    global queries
+
+    #transfrom the document from char* to (void*)&std::set<std::string>
+    doc_words: c_void_p = core.doc_str_to_doc_words(doc_str.encode())
+
+    #returns a new set with c++ type (void*)&std::set<QueryID>
+    ids: c_void_p = core.init_ids()
+
+    #returns the number of unique query's in queries for the only reason to be used in the next line  
+    size: int = int(core.queries_size(queries))
+    
+    indices_rdd = sc.parallelize(range(size))
+    correct_ids_rdd = indices_rdd.filter(lambda i: core.match_query(queries, i, doc_words))
+
+    correct_ids = correct_ids_rdd.collect()
+
+    for i in correct_ids:
+        core.add_ids(queries, i, ids)
+
+    # After matching, convert ids to array and map to Python list
+    ids_as_array = ctypes.POINTER(ctypes.c_uint)()
+    n = core.ids_to_array(ids, ctypes.byref(ids_as_array))
+
+    array = list(map(int, ids_as_array[:n]))
+        
+    doc = Document(doc_id, len(array), array)
+    docs.append(doc)
+
+    return ErrorCode.EC_SUCCESS
+
 # Dask
 def MatchDocument(doc_id: DocumentID, doc_str: str) -> ErrorCode:
     
@@ -129,7 +130,7 @@ def MatchDocument(doc_id: DocumentID, doc_str: str) -> ErrorCode:
     size: int = int(core.queries_size(queries))
     
     tasks = [
-        match_query_on_doc(queries, doc_words, i, ids) 
+        match_query_on_doc(queries, doc_words, i) 
         for i in range(size)
     ]
 
@@ -148,7 +149,6 @@ def MatchDocument(doc_id: DocumentID, doc_str: str) -> ErrorCode:
     docs.append(doc)
 
     return ErrorCode.EC_SUCCESS
-
 
 # Get the first undeliverd resuilt from "docs" and return it
 def GetNextAvailRes() -> tuple[ErrorCode, DocumentID, int, tuple[int]]:
