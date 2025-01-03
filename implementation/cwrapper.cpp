@@ -8,18 +8,17 @@
 #include <unordered_set>
 #include <math.h>
 
-using QueryCache = unordered_map<WordCacheKey, unordered_set<string>>;
+int max_size = 1000;
 
 // Initialize the QueryCache
 void* initializeCache() {
-    QueryCache* cache = new QueryCache();
-    return static_cast<void*>(cache); // Return an empty cache
+    return static_cast<void*>(new FrequencyCache(max_size));
 }
 
 // Free the allocated memory for the QueryCache
 void freeCache(void* cache){
     if (cache != nullptr) {
-        QueryCache* actual_cache = static_cast<QueryCache*>(cache); // Cast void* back to QueryCache*
+        auto actual_cache = static_cast<FrequencyCache*>(cache);// Cast void* back to QueryCache*
         actual_cache->clear();  // Clear all the stored keys
         delete actual_cache;    // Free the allocated memory for the cache
     }
@@ -123,17 +122,17 @@ bool match_query(void *queries, unsigned int index, void *document_words){
 
 // Main Optimized Match Query-Document function for opt_core.py
 bool matchQuery_caching(const Query& query, const unordered_set<string>& document_words, void* cache){
-    QueryCache* actual_cache = static_cast<QueryCache*>(cache);
+    auto actual_cache = static_cast<FrequencyCache*>(cache);   
     for (const auto& query_word : query.words){
         bool match = false;
         unordered_set<string> matched_words;
         WordCacheKey key{query_word, query.match_type, query.match_dist};
         // Look up for the key in the cache
-        auto cache_iter = actual_cache->find(key);
+        auto cached_value = actual_cache->get(key);
+        
 
-        if (cache_iter != actual_cache->end()) {
-            matched_words = cache_iter->second;
-            for (const auto& doc_word : matched_words) {
+        if (cached_value) {
+            for (const auto& doc_word : *cached_value) {
                 // If the document word is already matched (valid), no need to check again
                 if (document_words.find(doc_word) != document_words.end()) {
                     match = true;
@@ -176,7 +175,7 @@ bool matchQuery_caching(const Query& query, const unordered_set<string>& documen
         if (!match){
             return false;
         }
-        actual_cache->operator[](key).insert(matched_words.begin(), matched_words.end());
+        actual_cache->insert(key, matched_words);
     }
     return true;
 }
