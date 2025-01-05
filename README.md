@@ -10,26 +10,25 @@ Develop a data-parallel version using a framework like Apache Spark, Flink, or D
 
 Deliverables include the source code, test results, and reports detailing implementation, optimizations, and performance comparisons.
 
-## Testing Instructions
+## Minimum Requirements
+
+Python(3.10)
+
+### Testing Instructions
 
 To test the implementation, follow these steps:
 
 ```bash
 cd DIA-2024-2025-Alternative-Exercise/
 make setup
-./testdriver test_data/small_test.txt
-cat result.txt
 ```
 
-## Testing for Python and Apache Spark Instructions
-
-To test the implementation, follow these steps:
+Then, setup the python environment for the required libraries:
 
 ```bash
-cd DIA-2024-2025-Alternative-Exercise/
-make clean
 make setup_python
 ```
+
 Make sure to update your python interpreter to the .venv path in your workspace:
 ".../DIA-2024-2025-Alternative-Exercise/.venv/bin/python"
 
@@ -39,12 +38,15 @@ Press `Ctrl+Shift+P`(Windows) or `Cmd+Shift+P`(Mac) to open the command palette.
 Search for "Python: Select Interpreter" and click on "Enter interpreter path...". And enter .venv path.
 
 Close and Reopen Visual Studio Code if necessary
-Activate the Virtual Environment:
+
+Start the speed test using:
 
 ```bash
-source .venv/bin/activate
+python benchmark.py
 ```
 
+To clean the virtual environment and compiled c files:
 
-
-
+```bash
+make clean
+```

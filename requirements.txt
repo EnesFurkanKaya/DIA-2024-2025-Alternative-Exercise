@@ -1,3 +1,6 @@
-pyspark
 numpy
 pandas
+dask
+dask[distributed]
+matplotlib
+pyspark

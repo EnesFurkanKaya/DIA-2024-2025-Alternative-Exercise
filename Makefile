@@ -1,6 +1,6 @@
 # Build targets (your implementation targets should go in IMPL_O)
 TEST_O=test_driver/test.o 
-IMPL_O=implementation/core.o implementation/queries.o implementation/cache.o implementation/distance.o
+IMPL_O=implementation/ref_core.o implementation/queries.o implementation/cache.o implementation/distance.o implementation/cwrapper.o
 
 # Compiler flags
 CC  = gcc
@@ -46,6 +46,9 @@ clean:
 	rm -f $(PROGRAMS) lib$(LIBRARY).so
 	find . -name '*.o' -print | xargs rm -f
 	rm -rf $(VENV_DIR)
+	rm -f result.txt
+	rm -rf results
+	find . -name "__pycache__" -exec rm -rf {} +
 
 # Setup for Python environment (no C programs)
 .PHONY: setup_python

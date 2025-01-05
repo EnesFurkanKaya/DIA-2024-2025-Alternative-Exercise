@@ -24,6 +24,11 @@ using namespace std;
 		return Queries::query_to_queryIDs[query];
 	}
 
+	void Queries::addIDs(set<QueryID>& queries, const Query& query){
+		set<QueryID>& new_queries = Queries::query_to_queryIDs[query];
+		queries.insert(new_queries.begin(), new_queries.end());
+	}
+
 	Query& Queries::getQuery(const QueryID& id){
 		return Queries::id_to_query[id];
 	}
@@ -31,6 +36,18 @@ using namespace std;
 	set<Query>& Queries::getAllQuerys(){
 		return Queries::queries;
 	}
+
+    unsigned int Queries::size()
+    {
+        return Queries::queries.size();
+    }
+
+    Query &Queries::getQueryByIndex(const unsigned int index)
+    {
+    	auto it = Queries::queries.begin();
+    	std::advance(it, index);
+    	return const_cast<Query&>(*it);
+    }
 
     Query::Query()
     {
