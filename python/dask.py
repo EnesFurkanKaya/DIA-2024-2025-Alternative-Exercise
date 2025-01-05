@@ -8,6 +8,7 @@ import ctypes
 
 from python.helper.helper import *
 
+from dask import compute
 from pyspark import SparkContext
 sc = SparkContext.getOrCreate()
 
@@ -108,35 +109,51 @@ def MatchDocument_apache(doc_id: DocumentID, doc_str: str) -> ErrorCode:
     return ErrorCode.EC_SUCCESS
 
 # Dask
+def cache_doc_words(doc_str: str):
+    if not hasattr(cache_doc_words, "_doc_cache"):
+        cache_doc_words._doc_cache = {}
+
+    if doc_str not in cache_doc_words._doc_cache:
+        cache_doc_words._doc_cache[doc_str] = core.doc_str_to_doc_words(doc_str.encode('utf-8'))
+
+    return cache_doc_words._doc_cache[doc_str]
+
+def match_query_on_doc(queries, doc_words, query_idx: int):
+    # Perform the match for a specific query
+    return query_idx if core.match_query(queries, query_idx, doc_words) else None
+
+def add_ids_to_core(queries, ids, local_ids):
+    unique_ids = set()
+    for query_idx in local_ids:
+        if query_idx is not None:
+            unique_ids.add(query_idx)
+
+    for i in unique_ids:
+        core.add_ids(queries, i, ids)
+
+def convert_ids_to_list(ids):
+    ids_as_array = ctypes.POINTER(ctypes.c_uint)()
+    n = core.ids_to_array(ids, ctypes.byref(ids_as_array))
+    return list(map(int, ids_as_array[:n]))
+
 def MatchDocument(doc_id: DocumentID, doc_str: str) -> ErrorCode:
     global queries
 
-    # Cache if words are reused
-    if not hasattr(MatchDocument, "_doc_cache"):
-        MatchDocument._doc_cache = {}
-
-    if doc_str not in MatchDocument._doc_cache:
-        MatchDocument._doc_cache[doc_str] = core.doc_str_to_doc_words(doc_str.encode('utf-8'))
-
-    doc_words = MatchDocument._doc_cache[doc_str]
+    doc_words = cache_doc_words(doc_str)
 
     # Initialize IDs container
     ids = core.init_ids()
 
     # Localizing core functions to avoid lookups because it is called more than once
-    match_query = core.match_query
-    add_ids = core.add_ids
-
-    # Inline query matching and ID addition
     size = core.queries_size(queries)
-    for query_idx in range(size):
-        if match_query(queries, query_idx, doc_words):
-            add_ids(queries, query_idx, ids)
+    
+    # Use Dask to create tasks for query matching
+    tasks = [match_query_on_doc(queries, doc_words, query_idx) for query_idx in range(size)]
+    local_ids = compute(*tasks)
 
-    # Convert IDs to Python list more efficiently
-    ids_as_array = ctypes.POINTER(ctypes.c_uint)()
-    n = core.ids_to_array(ids, ctypes.byref(ids_as_array))
-    array = ctypes.cast(ids_as_array, ctypes.POINTER(ctypes.c_uint * n)).contents[:]
+    add_ids_to_core(queries, ids, local_ids)
+
+    array = convert_ids_to_list(ids)
 
     # Create Document object
     doc = Document(doc_id, len(array), array)
@@ -157,3 +174,4 @@ def GetNextAvailRes() -> tuple[ErrorCode, DocumentID, int, tuple[int]]:
     docs.pop(0)
 
     return ErrorCode.EC_SUCCESS, p_doc_id, p_num_res, p_query_ids
+    

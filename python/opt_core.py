@@ -85,37 +85,45 @@ def EndQuery(query_id: QueryID) -> ErrorCode:
     core.end_query(queries, ctypes.c_uint(int(query_id)))
     return ErrorCode.EC_SUCCESS
 
+def cache_doc_words(doc_str: str):
+    if not hasattr(cache_doc_words, "_doc_cache"):
+        cache_doc_words._doc_cache = {}
+
+    if doc_str not in cache_doc_words._doc_cache:
+        cache_doc_words._doc_cache[doc_str] = core.doc_str_to_doc_words_unorderedset(doc_str.encode('utf-8'))
+
+    return cache_doc_words._doc_cache[doc_str]
+
 def MatchDocument(doc_id: DocumentID, doc_str: str) -> ErrorCode:
     
     global queries
     global cache
     
-    #transfrom the document from char* to (void*)&std::set<std::string>
-    doc_words: c_void_p = core.doc_str_to_doc_words_unorderedset(doc_str.encode())
+    # Cache the document words
+    doc_words = cache_doc_words(doc_str)
 
-    #returns a new set with c++ type (void*)&std::set<QueryID>
+    # Returns a new set with c++ type (void*)&std::set<QueryID>
     ids: c_void_p = core.init_ids()
 
-    #returns the number of unique query's in queries for the only reason to be used in the next line  
+    # Returns the number of unique queries in queries
     size: int = int(core.queries_size(queries))
     
-    #iterate over all unique query's
+    # Iterate over all unique queries
     for i in range(size):
-        if(core.match_query_caching(queries, i, doc_words, cache)):
-            #adds matched query ids to variable ids
+        if core.match_query_caching(queries, i, doc_words, cache):
+            # Adds matched query ids to variable ids
             core.add_ids(queries, i, ids)
 
-    #converts C++ type std::set<QueryID> to C type unsigned int**
+    # Converts C++ type std::set<QueryID> to C type unsigned int**
     ids_as_array = ctypes.POINTER(ctypes.c_uint)()
     n = core.ids_to_array(ids, ctypes.byref(ids_as_array))
 
-    #converts C type unsigned int** to python list
+    # Converts C type unsigned int** to Python list
     array = list(map(int, ids_as_array[:n]))
         
     doc = Document(doc_id, n, array)
     docs.append(doc)
     return ErrorCode.EC_SUCCESS
-
 # Get the first undeliverd resuilt from "docs" and return it
 def GetNextAvailRes() -> tuple[ErrorCode, DocumentID, int, tuple[int]]:
     if not docs:
