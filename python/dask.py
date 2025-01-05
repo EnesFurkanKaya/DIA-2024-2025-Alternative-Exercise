@@ -8,7 +8,6 @@ import ctypes
 
 from python.helper.helper import *
 
-from dask import compute
 from pyspark import SparkContext
 sc = SparkContext.getOrCreate()
 
@@ -61,13 +60,6 @@ def InitializeIndex():
 def DestroyIndex():
     return ErrorCode.EC_SUCCESS
 
-def match_query_on_doc(queries, doc_words, query_idx: int) -> bool:
-    local_ids = []
-    # Perform the match for a specific query
-    if bool(core.match_query(queries, query_idx, doc_words)):
-        local_ids.append(query_idx)
-    return local_ids
-    
 
 #######################################################
 #################### Main Functions ###################
@@ -117,34 +109,36 @@ def MatchDocument_apache(doc_id: DocumentID, doc_str: str) -> ErrorCode:
 
 # Dask
 def MatchDocument(doc_id: DocumentID, doc_str: str) -> ErrorCode:
-    
     global queries
 
-    #transfrom the document from char* to (void*)&std::set<std::string>
-    doc_words: c_void_p = core.doc_str_to_doc_words(doc_str.encode())
+    # Cache if words are reused
+    if not hasattr(MatchDocument, "_doc_cache"):
+        MatchDocument._doc_cache = {}
 
-    #returns a new set with c++ type (void*)&std::set<QueryID>
-    ids: c_void_p = core.init_ids()
+    if doc_str not in MatchDocument._doc_cache:
+        MatchDocument._doc_cache[doc_str] = core.doc_str_to_doc_words(doc_str.encode('utf-8'))
 
-    #returns the number of unique query's in queries for the only reason to be used in the next line  
-    size: int = int(core.queries_size(queries))
-    
-    tasks = [
-        match_query_on_doc(queries, doc_words, i) 
-        for i in range(size)
-    ]
+    doc_words = MatchDocument._doc_cache[doc_str]
 
-    local_ids = compute(*tasks)
+    # Initialize IDs container
+    ids = core.init_ids()
 
-    for i in set().union(*local_ids):
-        core.add_ids(queries, i, ids)
-    
-    # After matching, convert ids to array and map to Python list
+    # Localizing core functions to avoid lookups because it is called more than once
+    match_query = core.match_query
+    add_ids = core.add_ids
+
+    # Inline query matching and ID addition
+    size = core.queries_size(queries)
+    for query_idx in range(size):
+        if match_query(queries, query_idx, doc_words):
+            add_ids(queries, query_idx, ids)
+
+    # Convert IDs to Python list more efficiently
     ids_as_array = ctypes.POINTER(ctypes.c_uint)()
     n = core.ids_to_array(ids, ctypes.byref(ids_as_array))
+    array = ctypes.cast(ids_as_array, ctypes.POINTER(ctypes.c_uint * n)).contents[:]
 
-    array = list(map(int, ids_as_array[:n]))
-        
+    # Create Document object
     doc = Document(doc_id, len(array), array)
     docs.append(doc)
 
@@ -163,4 +157,3 @@ def GetNextAvailRes() -> tuple[ErrorCode, DocumentID, int, tuple[int]]:
     docs.pop(0)
 
     return ErrorCode.EC_SUCCESS, p_doc_id, p_num_res, p_query_ids
-    

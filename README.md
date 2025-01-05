@@ -10,7 +10,11 @@ Develop a data-parallel version using a framework like Apache Spark, Flink, or D
 
 Deliverables include the source code, test results, and reports detailing implementation, optimizations, and performance comparisons.
 
-## Testing Instructions
+## Minimum Requirements
+
+Python(3.10)
+
+### Testing Instructions
 
 To test the implementation, follow these steps:
 
@@ -18,11 +22,13 @@ To test the implementation, follow these steps:
 cd DIA-2024-2025-Alternative-Exercise/
 make setup
 ```
+
 Then, setup the python environment for the required libraries:
 
 ```bash
 make setup_python
 ```
+
 Make sure to update your python interpreter to the .venv path in your workspace:
 ".../DIA-2024-2025-Alternative-Exercise/.venv/bin/python"
 
@@ -44,6 +50,3 @@ To clean the virtual environment and compiled c files:
 ```bash
 make clean
 ```
-
-
-
