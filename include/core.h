@@ -1,5 +1,3 @@
-// Old solution without cwrappers pure python
-
 #ifndef __SIGMOD_CORE_H_
 #define __SIGMOD_CORE_H_
 

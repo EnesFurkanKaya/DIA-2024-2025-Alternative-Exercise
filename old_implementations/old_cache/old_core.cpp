@@ -1,6 +1,6 @@
-// Old solution without cwrappers pure python
+// Old ex2 solution with first caching attempt
 
-#include "../include/core.h"
+#include "core.h"
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
@@ -12,13 +12,9 @@
 #include <set>
 #include <algorithm>
 #include <queue>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <functional>
 
 #include "queries.h"
-#include <cache.h>
+#include "old_cache.h"
 #include <distance.h>
 
 using namespace std;
@@ -39,8 +35,6 @@ Queries queries;
 
 // Keeps all currently available results that has not been returned yet
 queue<Document> docs;
-
-mutex docs_mutex; // Mutex to protect access to the docs queue
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -192,69 +186,8 @@ ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
     }
 
 	//add document
-	{
-		lock_guard<mutex> lock(docs_mutex);
-		docs.push(document);
-	}
+	docs.push(document);
 
-	return EC_SUCCESS;
-}
-
-class ThreadPool {
-public:
-	ThreadPool(size_t num_threads);
-	~ThreadPool();
-	void enqueue(function<void()> task);
-
-private:
-	vector<thread> workers;
-	queue<function<void()>> tasks;
-	mutex queue_mutex;
-	condition_variable condition;
-	bool stop;
-};
-
-ThreadPool::ThreadPool(size_t num_threads) : stop(false) {
-	for (size_t i = 0; i < num_threads; ++i) {
-		workers.emplace_back([this] {
-			for (;;) {
-				function<void()> task;
-				{
-					unique_lock<mutex> lock(this->queue_mutex);
-					this->condition.wait(lock, [this] { return this->stop || !this->tasks.empty(); });
-					if (this->stop && this->tasks.empty()) return;
-					task = move(this->tasks.front());
-					this->tasks.pop();
-				}
-				task();
-			}
-		});
-	}
-}
-
-ThreadPool::~ThreadPool() {
-	{
-		unique_lock<mutex> lock(queue_mutex);
-		stop = true;
-	}
-	condition.notify_all();
-	for (thread &worker : workers) worker.join();
-}
-
-void ThreadPool::enqueue(function<void()> task) {
-	{
-		unique_lock<mutex> lock(queue_mutex);
-		tasks.push(move(task));
-	}
-	condition.notify_one();
-}
-
-ThreadPool thread_pool(thread::hardware_concurrency());
-
-ErrorCode MatchDocumentAsync(DocID doc_id, const char* doc_str) {
-	thread_pool.enqueue([doc_id, doc_str] {
-		MatchDocument(doc_id, doc_str);
-	});
 	return EC_SUCCESS;
 }
 

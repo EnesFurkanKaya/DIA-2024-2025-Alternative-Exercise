@@ -1,4 +1,5 @@
 # This one is slower than the single-threaded version.
+# Multithreading with Python attempt for Exercise 3.
 
 #######################################################
 ###################### Libraries ######################

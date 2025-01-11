@@ -1,4 +1,4 @@
-# Exercise 1 - Reimplementation for exercise 3
+# Exercise 1 
 
 #######################################################
 ###################### Libraries ######################
