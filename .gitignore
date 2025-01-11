@@ -3,9 +3,12 @@ Cache.o
 core.o
 queries.o
 test.o
+cwrapper.o
+ref_core.o
 libcore.so
 testdriver
 distance.o
 result.txt
 results
 .venv
+__pycache__
