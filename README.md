@@ -13,18 +13,18 @@ Deliverables include the source code, test results, and reports detailing implem
 ## Contents
 
 Included are files and directories:
-  - README                        This document
-  - Makefile                      Makefile to compile
-  - include/                      Header files
-  - implementation/               Cpp files
-  - old_implementations/          Contains our attempts and old implementations
-  - test_driver/                  Contains the test driver implementation. (Not used)
-  - python/                       Contains our python implementations
-  - python/test.py                Contains our translated test driver in python
-  - test_data/                    Contatins the test data
-  - results/                      Created after running the benchmark, with each implementations' runtime
-  - result.txt                    Created after running the benchmark, with reference solution's runtime
-  - benchmark.py                  Main python file to run the test
+  - README: This document
+  - Makefile: Makefile to compile
+  - include/: Header files
+  - implementation/: Cpp files
+  - old_implementations/: Contains our attempts and old implementations
+  - test_driver/: Contains the test driver implementation. (Not used)
+  - python/: Contains our python implementations
+  - python/test.py: Contains our translated test driver in python
+  - test_data/: Contatins the test data
+  - results/: Created after running the benchmark, with each implementations' runtime
+  - result.txt: Created after running the benchmark, with reference solution's runtime
+  - benchmark.py: Main python file to run the test
 
 ## Minimum Requirements
 
