@@ -10,9 +10,29 @@ Develop a data-parallel version using a framework like Apache Spark, Flink, or D
 
 Deliverables include the source code, test results, and reports detailing implementation, optimizations, and performance comparisons.
 
+## Contents
+
+Included are files and directories:
+  - README                        This document
+  - Makefile                      Makefile to compile
+  - include/                      Header files
+  - implementation/               Cpp files
+  - old_implementations/          Contains our attempts and old implementations
+  - test_driver/                  Contains the test driver implementation. (Not used)
+  - python/                       Contains our python implementations
+  - python/test.py                Contains our translated test driver in python
+  - test_data/                    Contatins the test data
+  - results/                      Created after running the benchmark, with each implementations' runtime
+  - result.txt                    Created after running the benchmark, with reference solution's runtime
+  - benchmark.py                  Main python file to run the test
+
 ## Minimum Requirements
 
-Python(3.10)
+GCC/G++ (Version supporting C++17)
+
+Python 3 (Installed and accessible as python3)
+
+Pip (For dependency installation)
 
 ### Testing Instructions
 
@@ -44,6 +64,8 @@ Start the speed test using:
 ```bash
 python benchmark.py
 ```
+
+This will run the given reference solution and all of our implementations, then plot their throughputs as bar and point graphs.
 
 To clean the virtual environment and compiled c files:
 
