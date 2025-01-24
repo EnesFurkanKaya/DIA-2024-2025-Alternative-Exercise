@@ -16,34 +16,47 @@ def run_reference_core(command):
     try:
         with open("powermetrics_reference.log", "w") as log_file:
             powermetrics_process = subprocess.Popen(["sudo", "powermetrics"], stdout=log_file, stderr=subprocess.STDOUT)
+            start_time = time.time()
             subprocess.run(command, check=True)
+            end_time = time.time()
             powermetrics_process.terminate()
+            return end_time - start_time
     except subprocess.CalledProcessError as e:
         print(f"Execution failed with error {e}")
+        return None
 
 # Run our core solution for Exercise 1 with powermetrics
 def run_solution_core():
     with open("powermetrics_core.log", "w") as log_file:
         powermetrics_process = subprocess.Popen(["sudo", "powermetrics"], stdout=log_file, stderr=subprocess.STDOUT)
+        start_time = time.time()
         test_matching(which=0)
+        end_time = time.time()
         time.sleep(10)  # Add a small delay to ensure powermetrics captures the data
         powermetrics_process.terminate()
+        return end_time - start_time
 
 # Run our opt_core solution for Exercise 2 with powermetrics
 def run_solution_opt_core():
     with open("powermetrics_opt_core.log", "w") as log_file:
         powermetrics_process = subprocess.Popen(["sudo", "powermetrics"], stdout=log_file, stderr=subprocess.STDOUT)
+        start_time = time.time()
         test_matching(which=1)
+        end_time = time.time()
         time.sleep(10)  # Add a small delay to ensure powermetrics captures the data
         powermetrics_process.terminate()
+        return end_time - start_time
 
 # Run our apache solution for Exercise 3 with powermetrics
 def run_solution_dask():
     with open("powermetrics_dask.log", "w") as log_file:
         powermetrics_process = subprocess.Popen(["sudo", "powermetrics"], stdout=log_file, stderr=subprocess.STDOUT)
+        start_time = time.time()
         test_matching(which=2)
+        end_time = time.time()
         time.sleep(10)  # Add a small delay to ensure powermetrics captures the data
         powermetrics_process.terminate()
+        return end_time - start_time
 
 # Extract the speed of the implementations from their txt output
 def extract_throughput(file_path):
@@ -161,20 +174,26 @@ def main():
         "powermetrics_dask.log": None
     }
 
+    execution_times = {}
+
     data_path = "test_data/small_test.txt"
     command = ["./testdriver", data_path]
     print("Running reference solution...")
-    run_reference_core(command)
-    print("Done.")
+    reference_time = run_reference_core(command)
+    execution_times["reference"] = reference_time
+    print(f"Done. Time taken: {reference_time:.2f} seconds.")
     print("Running ex. 1: core solution...")
-    run_solution_core()
-    print("Done.")
+    core_time = run_solution_core()
+    execution_times["core"] = core_time
+    print(f"Done. Time taken: {core_time:.2f} seconds.")
     print("Running ex. 2: optimized solution...")
-    run_solution_opt_core()
-    print("Done.")
+    opt_core_time = run_solution_opt_core()
+    execution_times["opt_core"] = opt_core_time
+    print(f"Done. Time taken: {opt_core_time:.2f} seconds.")
     print("Running ex. 3: data-parallel solution...")
-    run_solution_dask()
-    print("Done.")
+    dask_time = run_solution_dask()
+    execution_times["dask"] = dask_time
+    print(f"Done. Time taken: {dask_time:.2f} seconds.")
 
     for file in result_files:
         result_files[file] = extract_throughput(file)
@@ -185,6 +204,10 @@ def main():
     visualize_throughput(result_files)
     visualize_throughput_2(result_files)
     visualize_combined_power(power_files)
+
+    print("\nExecution Times:")
+    for key, value in execution_times.items():
+        print(f"{key}: {value:.2f} seconds")
 
 if __name__ == "__main__":
     main()
