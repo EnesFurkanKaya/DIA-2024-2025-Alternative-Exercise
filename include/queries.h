@@ -34,7 +34,7 @@ struct Query
 class Queries{
 private:
     map<QueryID,Query> id_to_query;
-    map<Query,set<QueryID>> query_to_queryIDs;
+    map<Query,set<QueryID> > query_to_queryIDs;
 	set<Query> queries; 
 
 public:
