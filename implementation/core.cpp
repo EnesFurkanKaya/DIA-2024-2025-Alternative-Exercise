@@ -116,7 +116,7 @@ ErrorCode EndQuery(QueryID query_id)
  * @return true if all words in query match any word in document,
  * @return false otherwise
  */
-bool matchQuery(const Query& query, const set<string>& document_words, Cache& cache){
+bool matchQuery(const Query& query, const set<string>& document_words){
 	unsigned int distance;
 	switch (query.match_type){
 		case MT_EXACT_MATCH:
@@ -128,52 +128,20 @@ bool matchQuery(const Query& query, const set<string>& document_words, Cache& ca
 			return true;
 		case MT_HAMMING_DIST:
 			for(const string& query_word: query.words){
-
-				// cache lookup for minimal distance computed so far
-				CacheValue cacheValue = cache.getHammingDistance(query_word);
-				distance = cacheValue.distance;
-				auto it = cacheValue.position;
-
-				// checks if the cached distance is small enough
-				if(distance <= query.match_dist) continue;
-
-				// checks if for the cached value already the entire document is searched
-				if(it == document_words.end()) return false;
-
-				// compare query_word with the remaining part of the document and update cache
-				for(;it!=document_words.end(); ++it) {
-					distance = min(distance, hammingDistance(query_word, it->data()));
+				for(const string& doc_word: document_words) {
+					distance = hammingDistance(query_word, doc_word);
 					if(distance <= query.match_dist) break;
 				}
-				cache.addHammingDistance(query_word, distance, it);
-
-				// check if the minimal distance between query_word and any word of the document is small enough
-				if(distance > query.match_dist)return false;
+				if(distance > query.match_dist) return false;
 			} 
 			return true;
 		case MT_EDIT_DIST:
 			for(const string& query_word: query.words){
-	
-				// cache lookup for minimal distance computed so far
-				CacheValue cacheValue = cache.getEditDistance(query_word);
-				distance = cacheValue.distance;
-				auto it = cacheValue.position;
-
-				// checks if for the cached value already the entire document is searched
-				if(distance <= query.match_dist) continue;
-
-				// compare query_word with the remaining part of the document and update cache
-				if(it == document_words.end()) return false;
-	
-				// compare query_word with the remaining part of the document and update cache
-				for(;it!=document_words.end(); ++it) {
-					distance = min(distance, editDistance(query_word, it->data()));
+				for(const string& doc_word: document_words) {
+					distance = editDistance(query_word, doc_word);
 					if(distance <= query.match_dist) break;
 				}
-				cache.addEditDistance(query_word, distance, it);
-
-				// check if the minimal distance between query_word and any word of the document is small enough
-				if(distance > query.match_dist)return false;
+				if(distance > query.match_dist) return false;
 			}
 			return true;
 	}
@@ -183,23 +151,16 @@ bool matchQuery(const Query& query, const set<string>& document_words, Cache& ca
 
 ErrorCode MatchDocument(DocID doc_id, const char* doc_str)
 {
-
 	//transform one big document string to set of word-strings
 	string cur_doc_str(doc_str);
 	set<string> document_words;
 	string_to_words(cur_doc_str, document_words);
 
-	//init cache
-	Cache cache = Cache(document_words.begin());
-
-
 	//match all queries
 	set<QueryID> ids;
 	for(const Query &query: queries.getAllQuerys()){
-
 		//match query (true for match and false for no match)
-		if(matchQuery(query, document_words, cache)){
-
+		if(matchQuery(query, document_words)){
 			//store query_ids of matching queries
 			set<QueryID> &set_ids = queries.getIDs(query);
 			ids.insert(set_ids.begin(), set_ids.end());
