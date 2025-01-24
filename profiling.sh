@@ -1,4 +1,15 @@
-make clean
-make
-sudo perf record -g -F 99 --call-graph dwarf ./testdriver test_data/big_test.txt
-sudo perf report --symbol-filter=MatchDocument
+# Start powermetrics in the background and save its PID
+sudo powermetrics -i 1000 -o powermetrics_output.txt & 
+POWERMETRICS_PID=$!
+
+# Run the test driver
+./testdriver test_data/small_test.txt
+
+# Sleep for a while to allow powermetrics to collect data
+sleep 5
+
+# Stop powermetrics
+sudo kill $POWERMETRICS_PID
+
+# Display the result
+cat result.txt
