@@ -22,16 +22,16 @@ def run_reference_core(command):
         print(f"Execution failed with error {e}")
 
 # Run our core solution for Exercise 1
-def run_solution_core():
-    test_matching(which=0)
+def run_solution_core(data_path):
+    test_matching(which=0, data_path=data_path)
 
 # Run our opt_core solution for Exercise 2
-def run_solution_opt_core():
-    test_matching(which=1)
+def run_solution_opt_core(data_path):
+    test_matching(which=1, data_path=data_path)
 
 # Run our apache solution for Exercise 3
-def run_solution_dask():
-    test_matching(which=2)
+def run_solution_dask(data_path):
+    test_matching(which=2, data_path=data_path)
 
 # Extract the speed of the implementations from their txt output
 def extract_throughput(file_path):
@@ -119,13 +119,13 @@ print("Running reference solution...")
 run_reference_core(command) # Comment out this line to prevent long wait for the reference solution
 print("Done.")
 print("Running ex. 1: core solution...")
-run_solution_core()
+run_solution_core(data_path)
 print("Done.")
 print("Running ex. 2: optimized solution...")
-run_solution_opt_core()
+run_solution_opt_core(data_path)
 print("Done.")
 print("Running ex. 3: data-parallel solution...")
-run_solution_dask()
+run_solution_dask(data_path)
 print("Done.")
 
 for file in result_files:

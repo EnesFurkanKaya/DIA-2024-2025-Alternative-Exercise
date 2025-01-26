@@ -8,8 +8,8 @@ from typing import TextIO
 from collections import deque
 from python.helper.helper import ErrorCode, MatchType
 # 0 -> core, 1 -> opt_core, 2 -> dask
-def test_matching(which: int):
-    INPUT_FILE_PATH = "test_data/small_test.txt"
+def test_matching(which: int, data_path: str):
+    INPUT_FILE_PATH = data_path
     if which == 0:
         from python.core import DestroyIndex, EndQuery, GetNextAvailRes, InitializeIndex, MatchDocument, StartQuery
         OUTPUT_FILE_PATH = "results/result_core.txt"
