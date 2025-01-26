@@ -18,7 +18,7 @@ Included are files and directories:
   - include/: Header files
   - implementation/: Cpp files
   - old_implementations/: Contains our attempts and old implementations
-  - test_driver/: Contains the test driver implementation. (Not used)
+  - test_driver/: Contains the provided test driver implementation.
   - python/: Contains our python implementations
   - python/test.py: Contains our translated test driver in python
   - test_data/: Contatins the test data
@@ -49,7 +49,7 @@ Then, setup the python environment for the required libraries:
 make setup_python
 ```
 
-Make sure to update your python interpreter to the .venv path in your workspace:
+Make sure to update your python interpreter path to the .venv path in your workspace:
 ".../DIA-2024-2025-Alternative-Exercise/.venv/bin/python"
 
 For Visual Studio Code:
@@ -59,6 +59,8 @@ Search for "Python: Select Interpreter" and click on "Enter interpreter path..."
 
 Close and Reopen Visual Studio Code if necessary
 
+Include the test file under the directory /test_data. Make sure to include only data sets with the provided and allowed structure, and one file at a time.
+
 Start the speed test using:
 
 ```bash
@@ -67,8 +69,16 @@ python benchmark.py
 
 This will run the given reference solution and all of our implementations, then plot their throughputs as bar and point graphs.
 
+The results as txt file can be found:
+
+- For the throughput of reference solution: result.txt
+
+- For the throughputs of our solutions: results/*
+
 To clean the virtual environment and compiled c files:
 
 ```bash
 make clean
 ```
+
+This will delete all object files, python caches and the virtual environment with installed external libraries.

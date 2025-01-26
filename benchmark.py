@@ -7,6 +7,7 @@
 import subprocess
 from python.test import test_matching
 import re
+import os
 import matplotlib.pyplot as plt
 
 #######################################################
@@ -106,10 +107,16 @@ result_files = {
         "results/result_dask.txt": None
     }
 
-data_path = "test_data/small_test.txt"
+test_data_dir = "test_data"
+files = os.listdir(test_data_dir)
+if files:
+    data_path = os.path.join(test_data_dir, files[0])
+else:
+    raise FileNotFoundError(f"No files found in /{test_data_dir}. Please include the test data under this directory.")
+
 command = ["./testdriver", data_path]
 print("Running reference solution...")
-run_reference_core(command)
+run_reference_core(command) # Comment out this line to prevent long wait for the reference solution
 print("Done.")
 print("Running ex. 1: core solution...")
 run_solution_core()
