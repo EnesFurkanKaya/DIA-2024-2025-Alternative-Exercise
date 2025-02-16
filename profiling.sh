@@ -1,5 +1,10 @@
+#!/bin/bash
+
+# Output file for powermetrics
+OUTPUT_FILE=$1
+
 # Start powermetrics in the background and save its PID
-sudo powermetrics -o powermetrics_output.txt & 
+sudo powermetrics -o "$OUTPUT_FILE" & 
 POWERMETRICS_PID=$!
 
 # Run the test driver

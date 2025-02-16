@@ -1,0 +1,272 @@
+Machine model: MacBookPro17,1
+OS version: 23G93
+Boot arguments: 
+Boot time: Mon Feb 10 09:18:58 2025
+
+
+
+*** Sampled system activity (Sun Feb 16 16:12:45 2025 +0100) (5009.61ms elapsed) ***
+
+*** Running tasks ***
+
+Name                               ID     CPU ms/s  User%  Deadlines (<2 ms, 2-5 ms)  Wakeups (Intr, Pkg idle)
+Code Helper (Renderer)             80434  193.18    92.21  5.39    5.78               12.57   1.00              
+WindowServer                       155    342.31    63.89  0.20    0.00               372.18  15.16             
+cpptools                           80916  13.79     85.45  0.00    0.00               3.19    0.20              
+Code Helper (GPU)                  64886  184.65    75.53  0.00    0.00               122.46  11.77             
+DEAD_TASKS                         -1     25.64     37.83  0.00    0.00               0.00    0.00              
+powermetrics                       83987  3.46      8.05   0.00    0.00               0.20    0.00              
+mdworker_shared                    83993  20.38     80.27  0.00    0.00               0.00    0.00              
+kernel_task                        0      101.21    0.00   122.07  1.80               1033.17 364.40            
+mdworker_shared                    83992  19.62     77.05  0.00    0.00               0.00    0.00              
+launchd                            1      37.96     1.57   0.00    0.00               0.20    0.00              
+Code Helper (Plugin)               80487  11.41     80.64  10.57   0.00               13.16   1.00              
+Google Chrome Helper (Renderer)    77683  24.55     53.09  0.00    0.00               188.28  9.37              
+Electron                           64882  10.74     85.24  1.00    0.00               2.19    0.20              
+Code Helper                        65260  5.10      35.25  12.77   0.00               18.35   0.60              
+mds_stores                         327    1.88      82.27  0.00    0.00               0.20    0.00              
+Code Helper                        80486  0.84      68.96  3.79    0.00               4.39    0.00              
+mds                                116    1.39      50.74  0.00    0.00               0.20    0.00              
+cfprefsd                           401    0.87      71.35  0.00    0.00               0.00    0.00              
+airportd                           167    2.65      61.12  0.00    0.00               1.00    0.00              
+opendirectoryd                     127    1.12      50.09  0.00    0.00               0.00    0.00              
+logd                               87     1.95      41.53  0.00    0.00               0.00    0.00              
+com.apple.AmbientDisplayAgent      5683   2.37      69.64  0.00    0.00               0.00    0.00              
+notifyd                            150    0.61      40.65  0.00    0.00               0.00    0.00              
+corebrightnessd                    152    2.16      58.96  0.00    0.00               0.00    0.00              
+cfprefsd                           156    0.55      64.18  0.00    0.00               0.00    0.00              
+mDNSResponder                      203    0.62      51.61  1.80    0.00               2.99    0.00              
+audioclocksyncd                    323    1.61      55.73  0.00    0.00               0.00    0.00              
+TouchBarServer                     235    1.08      61.20  0.00    0.00               0.00    0.00              
+Code Helper                        65258  0.97      82.82  1.00    0.00               1.60    0.20              
+Code Helper                        64887  0.73      72.76  0.00    0.00               0.40    0.00              
+node                               66586  0.54      69.07  1.99    0.00               2.99    0.00              
+thermalmonitord                    126    0.79      30.76  0.00    0.00               1.00    0.00              
+Google Chrome                      454    0.57      78.25  0.00    0.00               1.20    0.00              
+Code Helper (Plugin)               65257  0.92      79.90  1.99    0.00               3.19    0.20              
+diskarbitrationd                   119    0.12      57.83  0.00    0.00               0.00    0.00              
+AXVisualSupportAgent               427    0.90      73.39  0.00    0.00               9.77    0.20              
+distnoted                          398    0.39      89.55  0.00    0.00               0.00    0.00              
+lsd                                413    0.18      51.55  0.00    0.00               0.00    0.00              
+Slack Helper (Renderer)            748    0.75      94.08  0.40    0.20               1.60    0.00              
+PerfPowerServices                  77332  0.60      72.38  0.00    0.00               0.00    0.00              
+Google Chrome Helper (Renderer)    81469  0.75      96.15  0.00    0.00               1.99    0.00              
+coreaudiod                         190    0.67      60.95  0.00    0.00               0.00    0.00              
+powerd                             101    0.54      45.85  0.00    0.00               0.20    0.00              
+distnoted                          140    0.33      59.13  0.00    0.00               0.00    0.00              
+Code Helper                        65259  0.45      51.72  0.80    0.00               1.60    0.00              
+bluetoothd                         149    0.41      69.23  0.00    0.00               0.20    0.00              
+Google Chrome Helper               594    0.37      50.49  0.00    0.00               0.20    0.00              
+fileproviderd                      441    0.39      52.26  0.00    0.00               2.99    0.00              
+locationd                          134    0.36      69.77  0.00    0.00               0.40    0.00              
+mdworker_shared                    83876  0.27      51.98  0.00    0.00               0.00    0.00              
+searchpartyd                       352    0.33      72.04  0.00    0.00               0.20    0.00              
+sharingd                           505    0.19      75.13  0.00    0.00               0.40    0.00              
+symptomsd                          236    0.25      74.75  0.00    0.00               0.00    0.00              
+AMPLibraryAgent                    83723  0.34      48.82  0.00    0.00               13.76   0.40              
+wifip2pd                           80166  0.15      53.53  0.00    0.00               0.40    0.00              
+Google Chrome Helper (Renderer)    78519  0.26      83.51  0.00    0.00               2.99    0.40              
+WirelessRadioManagerd              320    0.05      62.78  0.00    0.00               0.00    0.00              
+Google Chrome Helper               1615   0.19      81.21  0.00    0.00               0.80    0.00              
+configd                            99     0.12      24.73  0.00    0.00               0.00    0.00              
+chronod                            76949  0.14      64.16  0.00    0.00               0.40    0.00              
+Slack Helper                       630    0.20      55.35  0.00    0.00               0.20    0.00              
+Google Chrome Helper (GPU)         593    0.17      58.44  0.00    0.00               0.40    0.00              
+nearbyd                            497    0.11      41.86  0.00    0.00               0.60    0.00              
+WallpaperVideoExtension            495    0.11      41.37  0.00    0.00               0.80    0.00              
+Slack Helper                       1328   0.09      79.96  0.00    0.00               0.40    0.20              
+runningboardd                      161    0.11      45.33  0.00    0.00               0.60    0.00              
+Slack Helper (GPU)                 629    0.14      66.68  0.00    0.00               0.40    0.00              
+Code Helper (Plugin)               81296  0.06      72.98  0.40    0.00               0.80    0.00              
+watchdogd                          112    0.08      31.99  0.00    0.00               0.20    0.00              
+appleh13camerad                    305    0.09      30.47  0.00    0.00               1.00    0.00              
+Slack                              460    0.12      72.95  0.00    0.00               0.20    0.00              
+Slack Helper (Plugin)              1329   0.12      90.36  0.00    0.00               0.40    0.20              
+cpptools-srv                       82664  0.07      22.82  0.00    0.00               1.00    0.20              
+NotificationCenter                 452    0.04      43.85  0.00    0.00               0.20    0.00              
+remindd                            79771  0.07      34.00  0.00    0.00               0.80    0.00              
+cpptools-srv                       82414  0.06      18.49  0.00    0.00               1.00    0.00              
+containermanagerd                  26281  0.04      36.66  0.00    0.00               0.20    0.00              
+replayd                            486    0.07      40.24  0.00    0.00               0.60    0.00              
+cpptools-srv                       83878  0.07      21.17  0.00    0.00               1.00    0.00              
+Google Chrome Helper (Plugin)      1616   0.09      69.95  0.00    0.00               0.20    0.00              
+Code Helper (Plugin)               66109  0.04      66.36  0.40    0.00               0.80    0.00              
+Code Helper (Plugin)               81107  0.09      67.45  0.40    0.00               0.80    0.00              
+photoanalysisd                     80132  0.07      30.10  0.00    0.00               0.20    0.20              
+UIKitSystem                        35062  0.05      47.20  0.00    0.00               0.40    0.00              
+Code Helper (Plugin)               81713  0.09      72.54  0.40    0.00               0.80    0.00              
+mDNSResponderHelper                234    0.04      48.02  0.00    0.00               1.00    0.00              
+fseventsd                          92     0.07      58.96  0.00    0.00               0.80    0.00              
+gamepolicyd                        314    0.05      46.67  0.00    0.00               0.40    0.00              
+extensionkitservice                76952  0.04      35.00  0.00    0.00               0.20    0.00              
+trustd                             439    0.04      39.87  0.00    0.00               0.40    0.00              
+analyticsd                         189    0.03      21.44  0.00    0.00               0.00    0.00              
+distnoted                          271    0.03      28.96  0.00    0.00               0.00    0.00              
+distnoted                          222    0.03      28.77  0.00    0.00               0.00    0.00              
+distnoted                          402    0.03      25.76  0.00    0.00               0.00    0.00              
+com.apple.geod                     80168  0.03      45.54  0.00    0.00               0.40    0.00              
+com.apple.audio.Core-Audio-Drive   71396  0.03      34.62  0.00    0.00               1.00    0.00              
+appstoreagent                      76524  0.03      40.88  0.00    0.00               0.40    0.00              
+distnoted                          328    0.02      31.11  0.00    0.00               0.00    0.00              
+mobileassetd                       59107  0.03      49.74  0.00    0.00               0.40    0.00              
+distnoted                          335    0.02      31.08  0.00    0.00               0.00    0.00              
+distnoted                          218    0.02      32.93  0.00    0.00               0.00    0.00              
+com.apple.geod                     76936  0.03      46.99  0.00    0.00               0.40    0.00              
+cloudd                             16687  0.03      70.00  0.00    0.00               0.40    0.00              
+distnoted                          213    0.02      32.65  0.00    0.00               0.00    0.00              
+Google Chrome Helper (Renderer)    58034  0.06      90.89  0.00    0.00               0.40    0.00              
+distnoted                          346    0.02      33.70  0.00    0.00               0.00    0.00              
+routined                           74458  0.01      26.76  0.00    0.00               0.20    0.00              
+Google Chrome Helper (Renderer)    2201   0.05      90.44  0.00    0.00               0.40    0.00              
+distnoted                          1901   0.02      34.62  0.00    0.00               0.00    0.00              
+distnoted                          336    0.02      33.44  0.00    0.00               0.00    0.00              
+distnoted                          2013   0.02      32.81  0.00    0.00               0.00    0.00              
+distnoted                          2304   0.02      34.41  0.00    0.00               0.00    0.00              
+Google Chrome Helper               601    0.04      65.30  0.00    0.00               0.20    0.00              
+com.apple.Safari.SafeBrowsing.Se   77186  0.02      60.45  0.00    0.00               0.40    0.00              
+distnoted                          5393   0.02      33.63  0.00    0.00               0.00    0.00              
+distnoted                          355    0.02      35.25  0.00    0.00               0.00    0.00              
+distnoted                          2028   0.02      34.27  0.00    0.00               0.00    0.00              
+networkserviceproxy                76986  0.02      37.72  0.00    0.00               0.40    0.00              
+trustd                             205    0.02      40.76  0.00    0.00               0.40    0.00              
+UserEventAgent                     405    0.02      21.58  0.00    0.00               0.20    0.00              
+searchpartyuseragent               1689   0.02      32.20  0.00    0.00               0.40    0.00              
+akd                                79672  0.02      43.60  0.00    0.00               0.40    0.00              
+Google Chrome Helper (Renderer)    78245  0.04      84.43  0.00    0.00               0.40    0.20              
+nsurlsessiond                      201    0.02      24.92  0.00    0.00               0.20    0.00              
+KernelEventAgent                   146    0.02      18.36  0.00    0.00               0.20    0.00              
+nehelper                           74461  0.02      24.75  0.00    0.00               0.20    0.00              
+Code Helper (Plugin)               66061  0.03      67.96  0.20    0.00               0.40    0.00              
+PasswordBreachAgent                2377   0.02      31.37  0.00    0.00               0.20    0.00              
+Finder                             466    0.02      30.99  0.00    0.00               0.20    0.00              
+amsaccountsd                       79670  0.02      26.35  0.00    0.00               0.20    0.00              
+Google Chrome Helper (Renderer)    78496  0.02      77.17  0.00    0.00               0.40    0.00              
+uninstalld                         91     0.01      19.86  0.00    0.00               0.20    0.00              
+dasd                               137    0.01      32.05  0.00    0.00               0.20    0.00              
+com.apple.geod                     80173  0.01      45.32  0.00    0.00               0.20    0.00              
+rtcreportingd                      79776  0.01      39.90  0.00    0.00               0.20    0.00              
+CommCenter                         80143  0.01      21.67  0.00    0.00               0.20    0.00              
+syslogd                            123    0.02      18.95  0.00    0.00               0.20    0.00              
+awdd                               478    0.01      28.88  0.00    0.00               0.20    0.00              
+contextstored                      180    0.02      33.75  0.00    0.00               0.20    0.00              
+assistantd                         74509  0.01      28.19  0.00    0.00               0.20    0.00              
+homed                              74515  0.01      31.57  0.00    0.00               0.20    0.00              
+calaccessd                         79768  0.01      27.33  0.00    0.00               0.20    0.00              
+promotedcontentd                   80287  0.01      43.43  0.00    0.00               0.20    0.00              
+nsurlsessiond                      420    0.01      32.75  0.00    0.00               0.20    0.00              
+tipsd                              77051  0.01      46.40  0.00    0.00               0.20    0.00              
+Google Chrome Helper (Renderer)    78368  0.00      62.64  0.00    0.00               0.20    0.00              
+Google Chrome Helper (Renderer)    58184  0.00      69.60  0.00    0.00               0.20    0.00              
+WeatherWidget                      76953  0.01      0.00   0.00    0.00               0.20    0.00              
+Google Chrome Helper (Renderer)    67445  0.01      43.91  0.00    0.00               0.20    0.00              
+Google Chrome Helper (Renderer)    72677  0.01      61.72  0.00    0.00               0.20    0.20              
+Google Chrome Helper (Renderer)    78329  0.01      56.64  0.00    0.00               0.20    0.00              
+Google Chrome Helper (Renderer)    80162  0.01      57.14  0.00    0.00               0.20    0.00              
+Google Chrome Helper (Renderer)    58308  0.01      64.40  0.00    0.00               0.20    0.20              
+Google Chrome Helper (Renderer)    80159  0.01      53.89  0.00    0.00               0.20    0.00              
+Google Chrome Helper (Renderer)    49256  0.01      63.17  0.00    0.00               0.20    0.00              
+Google Chrome Helper (Renderer)    77675  0.01      56.83  0.00    0.00               0.20    0.00              
+ALL_TASKS                          -2     1028.88   62.64  165.68  7.79               1855.03 406.82            
+
+
+**** Battery and backlight usage ****
+
+Battery: percent_charge: 100
+
+
+**** Network activity ****
+
+out: 12.98 packets/s, 2258.46 bytes/s
+in:  12.98 packets/s, 1856.03 bytes/s
+
+
+**** Disk activity ****
+
+read: 0.40 ops/s 4.09 KBytes/s
+write: 54.10 ops/s 667.18 KBytes/s
+
+****  Interrupt distribution ****
+
+CPU 0:
+	Total IRQ: 2832.55 interrupts/sec
+	|-> IPI: 1881.98 interrupts/sec
+	|-> TIMER: 511.82 interrupts/sec
+CPU 1:
+	Total IRQ: 2501.59 interrupts/sec
+	|-> IPI: 1707.92 interrupts/sec
+	|-> TIMER: 533.77 interrupts/sec
+CPU 2:
+	Total IRQ: 2128.31 interrupts/sec
+	|-> IPI: 1618.69 interrupts/sec
+	|-> TIMER: 379.67 interrupts/sec
+CPU 3:
+	Total IRQ: 1703.32 interrupts/sec
+	|-> IPI: 1419.67 interrupts/sec
+	|-> TIMER: 198.02 interrupts/sec
+CPU 4:
+	Total IRQ: 117.97 interrupts/sec
+	|-> IPI: 67.07 interrupts/sec
+	|-> TIMER: 41.92 interrupts/sec
+CPU 5:
+	Total IRQ: 98.61 interrupts/sec
+	|-> IPI: 75.45 interrupts/sec
+	|-> TIMER: 19.56 interrupts/sec
+CPU 6:
+	Total IRQ: 127.36 interrupts/sec
+	|-> IPI: 108.99 interrupts/sec
+	|-> TIMER: 15.77 interrupts/sec
+CPU 7:
+	Total IRQ: 97.41 interrupts/sec
+	|-> IPI: 85.83 interrupts/sec
+	|-> TIMER: 10.78 interrupts/sec
+
+
+
+**** Processor usage ****
+
+E-Cluster HW active frequency: 1096 MHz
+E-Cluster HW active residency:  58.42% (600 MHz:   0% 972 MHz:  84% 1332 MHz: 5.9% 1704 MHz: 2.6% 2064 MHz: 7.7%)
+E-Cluster idle residency:  41.58%
+CPU 0 frequency: 1082 MHz
+CPU 0 active residency:  31.43% (600 MHz:   0% 972 MHz:  26% 1332 MHz: 2.2% 1704 MHz: .98% 2064 MHz: 1.8%)
+CPU 0 idle residency:  68.57%
+CPU 1 frequency: 1089 MHz
+CPU 1 active residency:  31.20% (600 MHz:   0% 972 MHz:  26% 1332 MHz: 1.9% 1704 MHz: 1.1% 2064 MHz: 2.0%)
+CPU 1 idle residency:  68.80%
+CPU 2 frequency: 1097 MHz
+CPU 2 active residency:  23.68% (600 MHz:   0% 972 MHz:  20% 1332 MHz: 1.5% 1704 MHz: .88% 2064 MHz: 1.6%)
+CPU 2 idle residency:  76.32%
+CPU 3 frequency: 1124 MHz
+CPU 3 active residency:  18.47% (600 MHz:   0% 972 MHz:  15% 1332 MHz: 1.3% 1704 MHz: .72% 2064 MHz: 1.7%)
+CPU 3 idle residency:  81.53%
+
+P-Cluster HW active frequency: 717 MHz
+P-Cluster HW active residency:   4.05% (600 MHz:  87% 828 MHz: 2.2% 1056 MHz: 2.6% 1284 MHz: 1.6% 1500 MHz: 1.5% 1728 MHz: 2.2% 1956 MHz: 1.5% 2184 MHz: .86% 2388 MHz: .46% 2592 MHz: .14% 2772 MHz: .08% 2988 MHz: .04% 3096 MHz: .03% 3144 MHz: .04% 3204 MHz: .05%)
+P-Cluster idle residency:  95.95%
+CPU 4 frequency: 1303 MHz
+CPU 4 active residency:   2.38% (600 MHz: .10% 828 MHz: .53% 1056 MHz: .72% 1284 MHz: .19% 1500 MHz: .19% 1728 MHz: .27% 1956 MHz: .16% 2184 MHz: .11% 2388 MHz: .06% 2592 MHz: .00% 2772 MHz:   0% 2988 MHz:   0% 3096 MHz: .01% 3144 MHz: .02% 3204 MHz: .00%)
+CPU 4 idle residency:  97.62%
+CPU 5 frequency: 1332 MHz
+CPU 5 active residency:   1.86% (600 MHz: .04% 828 MHz: .21% 1056 MHz: .46% 1284 MHz: .50% 1500 MHz: .25% 1728 MHz: .27% 1956 MHz: .06% 2184 MHz: .03% 2388 MHz: .02% 2592 MHz: .00% 2772 MHz:   0% 2988 MHz:   0% 3096 MHz: .01% 3144 MHz:   0% 3204 MHz: .02%)
+CPU 5 idle residency:  98.14%
+CPU 6 frequency: 1484 MHz
+CPU 6 active residency:   1.60% (600 MHz: .02% 828 MHz: .19% 1056 MHz: .26% 1284 MHz: .26% 1500 MHz: .19% 1728 MHz: .29% 1956 MHz: .28% 2184 MHz: .10% 2388 MHz: .01% 2592 MHz: .00% 2772 MHz:   0% 2988 MHz: .00% 3096 MHz: .00% 3144 MHz:   0% 3204 MHz:   0%)
+CPU 6 idle residency:  98.40%
+CPU 7 frequency: 1373 MHz
+CPU 7 active residency:   0.72% (600 MHz: .01% 828 MHz: .07% 1056 MHz: .08% 1284 MHz: .20% 1500 MHz: .27% 1728 MHz: .06% 1956 MHz: .02% 2184 MHz: .01% 2388 MHz: .00% 2592 MHz: .00% 2772 MHz:   0% 2988 MHz:   0% 3096 MHz: .00% 3144 MHz:   0% 3204 MHz:   0%)
+CPU 7 idle residency:  99.28%
+
+CPU Power: 140 mW
+GPU Power: 24 mW
+ANE Power: 0 mW
+Combined Power (CPU + GPU + ANE): 164 mW
+
+**** GPU usage ****
+
+GPU HW active frequency: 707 MHz
+GPU HW active residency:  26.87% (396 MHz: 1.1% 528 MHz:   0% 720 MHz:  26% 924 MHz:   0% 1128 MHz:   0% 1278 MHz:   0%)
+GPU SW requested state: (P1 :   0% P2 :   0% P3 : 100% P4 :   0% P5 :   0% P6 :   0%)
+GPU SW state: (SW_P1 :   0% SW_P2 :   0% SW_P3 :   0% SW_P4 :   0% SW_P5 :   0% SW_P6 :   0%)
+GPU idle residency:  73.13%
+GPU Power: 24 mW
+
